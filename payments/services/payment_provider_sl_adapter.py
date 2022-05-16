@@ -1,3 +1,4 @@
+import datetime
 from os import path
 from xml.etree.ElementTree import Element, tostring
 import xmltodict
@@ -18,6 +19,8 @@ class PaymentProviderSlAdapter:
     PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
     CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
 
+    DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+
     def __init__(self, point):
         self.POINT = point
         self.SERVICE = '189'
@@ -29,16 +32,18 @@ class PaymentProviderSlAdapter:
             "check": "0",
             "service": self.SERVICE,
             "account": payment_data.card_data,
-            "date": payment_data.created_at.isoformat()
+            "date": self._format_date(payment_data.created_at)
         })
         payment.append(Element('attribute', {'name': "full_name", 'value': payment_data.fio}))
         payment.append(Element('attribute', {'name': "metadata", 'value': payment_data.metadata}))
 
-        print(self._request(payment))
-        pass
+        return self._status_to_resp_format(self._request(payment))
 
     def get_payout_by_id(self, id):
-        print(self._request(Element('status', {"id": id})))
+        resp = self._request(Element('status', {"id": str(id)}))
+        return self._status_to_resp_format(resp)
+
+
 
     def get_balance(self) -> int:
         balance = self._request(Element('balance'))['response']['balance']['@balance']
@@ -52,4 +57,32 @@ class PaymentProviderSlAdapter:
         print(tostring(req))
 
         res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
+        print(res.text)
         return xmltodict.parse(res.text)
+
+
+    def _status_to_resp_format(self, resp):
+
+        status = {
+            "id": resp['response']['result']['@id'],
+            "state": resp['response']['result']['@state'],
+            "substate": resp['response']['result']['@substate'],
+            "code": resp['response']['result']['@code'],
+            "final": resp['response']['result']['@final'],
+            "trans": resp['response']['result']['@trans'],
+            "server_time": resp['response']['result']['@server_time'],
+        }
+
+        if resp['response']['result'].get('@process_time'):
+            status['process_time'] = resp['response']['result']['@process_time']
+
+        if resp['response']['result'].get('attribute'):
+            if resp['response']['result']['attribute'].get('@name') == 'provider-error-text':
+                status['provider-error-text'] = resp['response']['result']['attribute']['@value']
+
+
+        return status
+
+
+    def _format_date(self, date: datetime.datetime):
+        return date.strftime(self.DATE_FORMAT)
