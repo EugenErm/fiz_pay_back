@@ -11,4 +11,4 @@ def validate_file_extension(value):
 
 
 class UploadPaymentRegisterForm(forms.Form):
-    file = forms.FileField(validators=[validate_file_extension])
+    file = forms.FileField(label="file", required=True, validators=[validate_file_extension])

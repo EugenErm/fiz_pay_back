@@ -1,7 +1,15 @@
+import asyncio
+import json
+from asyncio import Queue
+
+import pandas
+import pika
 from django.db import transaction
 
 from payments.models import Payment, PaymentStatusEnum
+from payments.rmq import payment_publisher
 from payments.services.payment_provider_sl_adapter import PaymentProviderSlAdapter
+from utils.validators import is_credit_card
 
 
 class PaymentService:
@@ -10,27 +18,68 @@ class PaymentService:
     def get_balance(self):
         print(self.provider.get_balance())
 
-    def create(self):
-        payment = Payment(fio='Test Test Tes', card_data='4000000000000002', amount=1000)
+    def create(self, payment):
+        fio = f"{payment['lastname']} {payment['name']}"
+        if payment.notna().get('middlename'):
+            fio += f" {payment['middlename']}"
+
+        payment = Payment(fio=fio, card_data=payment['pam'], amount=payment['amount'])
         payment.save()
         print(payment)
         return payment.id
 
+    def import_payments_from_file(self, payments: pandas.DataFrame):
+        ### Validate ###
+        if len(payments) > 1000:
+            raise Exception("Count > 1000")
+        file_errors = []
+        for index, payment in payments.iterrows():
+            errors = validate_payment(payment)
+            if not len(errors) == 0:
+                file_errors.append((index, errors))
+        if not len(file_errors) == 0:
+            raise Exception(file_errors)
+        ######
+
+        ### Create payment ###
+        for index, payment in payments.iterrows():
+            self.create(payment)
+        ######
+
+    def start_payment_by_ids(self, payment_ids: [int]):
+        for id in payment_ids:
+            self.start_payment_by_id(id)
+
     @transaction.atomic()
-    def start(self, payment_id: int):
-        payment = Payment.objects.get(pk=payment_id)
+    def start_payment_by_id(self, id: int):
+        payment = Payment.objects.get(pk=int(id))
+        if payment and payment.status == PaymentStatusEnum.NEW:
+            self._add_payment_to_rabbit(payment)
+            payment.status = PaymentStatusEnum.IN_PROGRESS
+            payment.save()
 
-        trans = self.provider.create_payout(payment)
+    def _add_payment_to_rabbit(self, payment):
+        channel, connection = payment_publisher.init_rmq()
 
-        payment.status = PaymentStatusEnum.IN_PROGRESS
-        payment.operation_id = trans['trans']
-        payment.state = trans['state']
-        payment.substate = trans['substate']
-        payment.final = trans['final']
-        payment.start_payment_time = trans['server_time']
-        payment.save()
 
-        print(payment)
+        channel.queue_declare(queue='payment_queue', durable=True)
+
+        message = bytes(json.dumps({
+            "pam": payment.card_data,
+            "amount": payment.amount,
+            "fio": payment.fio,
+            "id": payment.id
+        }).encode('utf-8'))
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='payment_queue',
+            body=message,
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # make message persistent
+            ))
+
+        connection.close()
 
     @transaction.atomic()
     def refresh_status(self, payment_id: int):
@@ -49,8 +98,40 @@ class PaymentService:
 
         payment.save()
 
+    def get_payment_list(self) -> list:
+        payments = list(Payment.objects.all().values())
+        return payments
+
+    def clear_payment_list(self):
+        Payment.objects.all().delete()
+
     def get_payment_info(self, id):
         pass
+
+
+def validate_payment(payment: pandas.Series) -> list:
+    payment_na = payment.notna()
+    errors = []
+    if not payment_na.get('pam'):
+        errors.append(f"pam is required")
+    elif not is_credit_card(payment['pam']):
+        errors.append(f"{payment['pam']} is not credit card")
+
+    if not payment_na.get('name'):
+        errors.append(f"name is required")
+
+    if not payment_na.get('lastname'):
+        errors.append(f"lastname is required")
+
+    if not payment_na.get('amount'):
+        errors.append(f"amount is required")
+    else:
+        try:
+            int(payment['amount'])
+        except:
+            errors.append(f"amount err: {payment['amount']} is not int")
+
+    return errors
 
 
 def parce_state(state, sub_state):
