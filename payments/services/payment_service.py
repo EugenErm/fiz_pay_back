@@ -30,13 +30,14 @@ class PaymentService:
 
     def import_payments_from_file(self, payments: pandas.DataFrame):
         ### Validate ###
-        if len(payments) > 1000:
+        if len(payments) > 10000:
             raise Exception("Count > 1000")
         file_errors = []
         for index, payment in payments.iterrows():
             errors = validate_payment(payment)
             if not len(errors) == 0:
                 file_errors.append((index, errors))
+
         if not len(file_errors) == 0:
             raise Exception(file_errors)
         ######
@@ -114,7 +115,7 @@ def validate_payment(payment: pandas.Series) -> list:
     errors = []
     if not payment_na.get('pam'):
         errors.append(f"pam is required")
-    elif not is_credit_card(payment['pam']):
+    elif not is_credit_card(payment.get('pam')):
         errors.append(f"{payment['pam']} is not credit card")
 
     if not payment_na.get('name'):

@@ -1,4 +1,5 @@
 import json
+import os
 
 import pandas
 from django.http import HttpResponse
@@ -11,8 +12,14 @@ payment_service = PaymentService()
 
 
 def handle_uploaded_payment_list(f) -> pandas.DataFrame:
-    return pandas.read_csv(f, dtype="string").loc[:, ["name", "lastname", "middlename", "pam", "amount"]]
+    ext = os.path.splitext(f.name)[1]  # [0] returns path+filename
+    csv_ext = ['.csv']
+    xls_ext = ['.xlsx']
 
+    if ext.lower() in csv_ext:
+        return pandas.read_csv(f, dtype="string").loc[:, ["name", "lastname", "middlename", "pam", "amount"]]
+    elif ext.lower() in xls_ext:
+        return pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:, ["name", "lastname", "middlename", "pam", "amount"]]
 
 @csrf_exempt
 def upload_payment_list_file(request):
