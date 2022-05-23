@@ -21,49 +21,36 @@ class _PaymentImportService:
         if ext.lower() in csv_ext:
             self.import_payments_from_pandas_df(pandas.read_csv(f, dtype="string").loc[:, self.col_list])
         elif ext.lower() in xls_ext:
-            self.import_payments_from_pandas_df(pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:,self.col_list])
+            self.import_payments_from_pandas_df(
+                pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:, self.col_list])
 
     def import_payments_from_pandas_df(self, payments: pandas.DataFrame):
-        payment_list = self._pandas_to_payment_create_dto(payments)
-        # file_errors = self._validate_payments(payments)
-        # if not len(file_errors) == 0:
-        #     raise Exception(file_errors)
-        #
-        #
-        # self._create(payments)
+        file_errors = self._validate_payments(payments)
+        if not len(file_errors) == 0:
+            raise Exception(file_errors)
 
-    def _pandas_to_payment_create_dto(self,  payments: pandas.DataFrame) -> list[CreatePaymentDto]:
-        payment_list = []
+        self._create(payments)
+
+    def _validate_payments(self, payments: pandas.DataFrame):
+        if len(payments) > 10000:
+            raise Exception("Count > 10000")
+        file_errors = []
         for index, payment in payments.iterrows():
-            res = CreatePaymentDto.parse_obj(
+            errors = is_payment_valid(payment)
+            if not len(errors) == 0:
+                file_errors.append((index, errors))
+        return file_errors
+
+    def _create(self, payments: pandas.DataFrame):
+        for index, payment in payments.iterrows():
+            self.payment_service.create_payment(CreatePaymentDto.parse_obj(
                 {
                     "pam": payment['pam'],
                     "amount": payment['amount'],
                     "name": payment['name'],
                     "last_name": payment['lastname'],
-                    "middle_name": payment['middlename']
-                }
-            )
-            print(res)
-        return payment_list
-
-    # def _validate_payments(self, payments: pandas.DataFrame):
-    #     if len(payments) > 10000:
-    #         raise Exception("Count > 10000")
-    #     file_errors = []
-    #     for index, payment in payments.iterrows():
-    #
-    #         create_payment_dto
-    #
-    #         errors = is_payment_valid(payment)
-    #         if not len(errors) == 0:
-    #             file_errors.append((index, errors))
-    #
-    #
-    # def _create(self, payments: pandas.DataFrame):
-    #     for index, payment in payments.iterrows():
-    #         self.payment_service.create_payment(payment)
-
+                    "middle_name": None if payment.isna()['middlename'] else payment['middlename']
+                }))
 
 
 payment_import_service = _PaymentImportService()

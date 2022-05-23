@@ -8,7 +8,7 @@ from . import settings
 
 import threading
 
-from ..models import Payment
+from payments.models import Payment
 
 logger = logging.getLogger(__name__)
 
