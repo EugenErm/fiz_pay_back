@@ -6,9 +6,7 @@ from django.http import HttpResponse
 from .forms import UploadPaymentRegisterForm
 from django.views.decorators.csrf import csrf_exempt
 
-from .services.payment_service import PaymentService
-
-payment_service = PaymentService()
+from .services.payment_service import payment_service
 
 
 def handle_uploaded_payment_list(f) -> pandas.DataFrame:

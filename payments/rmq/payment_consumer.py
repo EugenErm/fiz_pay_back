@@ -1,16 +1,15 @@
 import pika
-import settings as settings
-
+from . import settings
 
 def init_rmq():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=settings.RMQ_HOST))
     channel = connection.channel()
 
     # создаем service_a_inner_exch
-    channel.exchange_declare(exchange=settings.RMQ_INPUT_EXCHANGE)
+    channel.exchange_declare(exchange=settings.RMQ_INPUT_EXCHANGE,  durable=True)
 
     # создаем dead_letter_exchange
-    channel.exchange_declare(exchange=settings.RMQ_DEAD_EXCHANGE)
+    channel.exchange_declare(exchange=settings.RMQ_DEAD_EXCHANGE,  durable=True,)
 
     # создаем service_a_input_q
     channel.queue_declare(
@@ -18,6 +17,7 @@ def init_rmq():
         durable=True,
         arguments={
             'x-dead-letter-exchange': settings.RMQ_DEAD_EXCHANGE,
+            'x-dead-letter-routing-key': settings.RMQ_DEAD_QUEUE
         }
     )
 
@@ -32,6 +32,7 @@ def init_rmq():
             # также не забываем, что у очереди "мертвых" сообщений
             # должен быть свой dead letter exchange
             'x-dead-letter-exchange': settings.RMQ_INPUT_EXCHANGE,
+            'x-dead-letter-routing-key': settings.RMQ_INPUT_QUEUE
         }
     )
     # связываем очередь "мертвых" сообщений с dead_letter_exchange
