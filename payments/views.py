@@ -6,18 +6,9 @@ from django.http import HttpResponse
 from .forms import UploadPaymentRegisterForm
 from django.views.decorators.csrf import csrf_exempt
 
+from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
 
-
-def handle_uploaded_payment_list(f) -> pandas.DataFrame:
-    ext = os.path.splitext(f.name)[1]  # [0] returns path+filename
-    csv_ext = ['.csv']
-    xls_ext = ['.xlsx']
-
-    if ext.lower() in csv_ext:
-        return pandas.read_csv(f, dtype="string").loc[:, ["name", "lastname", "middlename", "pam", "amount"]]
-    elif ext.lower() in xls_ext:
-        return pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:, ["name", "lastname", "middlename", "pam", "amount"]]
 
 @csrf_exempt
 def upload_payment_list_file(request):
@@ -25,11 +16,8 @@ def upload_payment_list_file(request):
         form = UploadPaymentRegisterForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                payment_list = handle_uploaded_payment_list(form.files['file'])
-                payment_service.import_payments_from_file(payment_list)
-
+                payment_import_service.import_payments_from_file(form.files['file'])
                 return HttpResponse('Ok')
-
             except Exception as e:
                 return HttpResponse(e)
         return HttpResponse(json.dumps({"err": form.errors}))

@@ -1,0 +1,2 @@
+class PaymentNotFountException(Exception):
+    pass

@@ -1,8 +1,10 @@
 import pandas
+
+from payments.dto.create_payment_dto import CreatePaymentDto
 from utils.validators.is_credit_card_validator import is_credit_card
 
 
-def is_payment_valid(self, payment: pandas.Series) -> list:
+def is_payment_valid(payment: CreatePaymentDto) -> list:
     payment_na = payment.notna()
     errors = []
     if not payment_na.get('pam'):
