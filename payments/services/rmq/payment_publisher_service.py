@@ -26,22 +26,14 @@ class _PaymentPublisherService:
             "id": payment.id
         }).encode('utf-8'))
 
-        message = bytes(json.dumps({
-            "pam": payment.card_data,
-            "amount": payment.amount,
-            "fio": payment.fio,
-            "id": payment.id
-        }).encode('utf-8'))
-
         self.channel.basic_publish(
-            # exchange='',
-            # routing_key=settings.RMQ_INPUT_QUEUE,
+            exchange=settings.RMQ_INPUT_EXCHANGE,
+            routing_key=settings.RMQ_INPUT_QUEUE,
             body=message,
             properties=pika.BasicProperties(
                 delivery_mode=2,  # make message persistent
             ))
 
-        connection.close()
 
 
 payment_publisher_service = _PaymentPublisherService()

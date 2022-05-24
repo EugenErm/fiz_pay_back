@@ -1,8 +1,9 @@
 import datetime
 from os import path
 from xml.etree.ElementTree import Element, tostring
-import xmltodict
+
 import requests
+import xmltodict
 
 from payments.models import Payment
 
@@ -10,9 +11,7 @@ from payments.models import Payment
 # Новый сертификат сгенерирован, не забудьте сохранить изменения. 274 Пароль: noWY94QwVv
 
 
-
-
-class PaymentProviderSlAdapter:
+class _PaymentProviderSlAdapter:
     # API_URL = "https://business.selfwork.ru/external/extended-cert"
     API_URL = "https://testing.selfwork.ru/external/extended-cert"
 
@@ -43,12 +42,9 @@ class PaymentProviderSlAdapter:
         resp = self._request(Element('status', {"id": str(id)}))
         return self._status_to_resp_format(resp)
 
-
-
     def get_balance(self) -> int:
         balance = self._request(Element('balance'))['response']['balance']['@balance']
         return int(balance)
-
 
     def _request(self, req_xml_element: Element):
         req = Element('request', {'point': str(self.POINT)})
@@ -59,7 +55,6 @@ class PaymentProviderSlAdapter:
         res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
         print(res.text)
         return xmltodict.parse(res.text)
-
 
     def _status_to_resp_format(self, resp):
 
@@ -80,9 +75,10 @@ class PaymentProviderSlAdapter:
             if resp['response']['result']['attribute'].get('@name') == 'provider-error-text':
                 status['provider-error-text'] = resp['response']['result']['attribute']['@value']
 
-
         return status
-
 
     def _format_date(self, date: datetime.datetime):
         return date.strftime(self.DATE_FORMAT)
+
+
+payment_provider_adapter = _PaymentProviderSlAdapter(point='274')

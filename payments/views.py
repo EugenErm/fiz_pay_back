@@ -36,7 +36,7 @@ def get_payment_list(request):
 def start_payment_by_ids(request):
     if request.method == 'POST':
         payments_ids = json.loads(request.body)
-        payment_service.start_payment_by_ids(payments_ids['ids'])
+        payment_service.start_payment(payments_ids['ids'][0])
         return HttpResponse("Ok")
     return HttpResponse("Err")
 

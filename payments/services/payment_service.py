@@ -22,7 +22,7 @@ class _PaymentService:
             fio += f" {create_payment_dto.middle_name}"
         payment = self.payment_model(fio=fio, card_data=create_payment_dto.pam, amount=create_payment_dto.amount)
         payment.save()
-        print(payment)
+
         return payment
 
     def is_payment_exist(self, payment_id: int) -> bool:
@@ -30,17 +30,19 @@ class _PaymentService:
 
     @transaction.atomic()
     def start_payment(self, payment_id: int):
+
         payment = self.get_payment_by_id(payment_id)
-        if not payment:
-            raise PaymentNotFountException()
-
-        if payment.status == PaymentStatusEnum.NEW:
-            raise IncorrectPaymentStatusException()
-
-        payment.status = PaymentStatusEnum.IN_PROGRESS
-        payment.save()
-
         self.payment_publisher_service.start_payment_event(payment)
+        # if not payment:
+        #     raise PaymentNotFountException()
+        #
+        # if payment.status == PaymentStatusEnum.NEW:
+        #     raise IncorrectPaymentStatusException()
+        #
+        # payment.status = PaymentStatusEnum.IN_PROGRESS
+        # payment.save()
+        #
+        # self.payment_publisher_service.start_payment_event(payment)
 
     def get_payment_list(self) -> list:
         payments = list(self.payment_model.objects.all().values())
