@@ -37,10 +37,12 @@ class PaymentWorker():
         self.channel.basic_consume(queue=settings.RMQ_INPUT_QUEUE, on_message_callback=self.task)
         self.channel.start_consuming()
 
+
     def task(self, ch: pika.channel.Channel, method, properties, body):
         payment_message = json.loads(body.decode())
         print(payment_message["pam"])
         ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
     # def create_thread(self):
     #     t = threading.Thread(target=self.init_channel)

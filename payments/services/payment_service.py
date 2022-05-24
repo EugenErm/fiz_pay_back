@@ -4,12 +4,14 @@ from payments.dto.create_payment_dto import CreatePaymentDto
 from payments.exceptions.incorrect_payment_status_exception import IncorrectPaymentStatusException
 from payments.exceptions.payment_not_fount_exception import PaymentNotFountException
 from payments.models import Payment, PaymentStatusEnum
+from payments.services.rmq.payment_publisher_service import payment_publisher_service
 
 
 class _PaymentService:
 
     def __init__(self):
         self.payment_model = Payment
+        self.payment_publisher_service = payment_publisher_service
 
     def get_payment_by_id(self, payment_id: int):
         return self.payment_model.objects.get(pk=payment_id)
@@ -35,13 +37,10 @@ class _PaymentService:
         if payment.status == PaymentStatusEnum.NEW:
             raise IncorrectPaymentStatusException()
 
-        self._add_payment_to_rabbit(payment)
         payment.status = PaymentStatusEnum.IN_PROGRESS
         payment.save()
 
-        #     self._add_payment_to_rabbit(payment)
-        #     payment.status = PaymentStatusEnum.IN_PROGRESS
-        #     payment.save()
+        self.payment_publisher_service.start_payment_event(payment)
 
     def get_payment_list(self) -> list:
         payments = list(self.payment_model.objects.all().values())
@@ -53,11 +52,10 @@ class _PaymentService:
     @transaction.atomic()
     def start_payment_by_id(self, id: int):
         payment = Payment.objects.get(pk=int(id))
-        self._add_payment_to_rabbit(payment)
-        # if payment and payment.status == PaymentStatusEnum.NEW:
-        #     self._add_payment_to_rabbit(payment)
-        #     payment.status = PaymentStatusEnum.IN_PROGRESS
-        #     payment.save()
+        if payment and payment.status == PaymentStatusEnum.NEW:
+
+            payment.status = PaymentStatusEnum.IN_PROGRESS
+            payment.save()
 
     @transaction.atomic()
     def refresh_status(self, payment_id: int):
