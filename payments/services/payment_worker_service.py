@@ -8,28 +8,22 @@ import threading
 import pika.channel
 
 from payments.models import Payment
+from payments.services.payment_provider_sl_adapter import payment_provider_adapter
 from payments.services.rmq import settings
 from payments.services.rmq.payment_consumer_service import payment_consumer_service
 
 
-
-
-
-# def pool_task():
-#     PaymentWorker().run()
-
-
-
-
 def payment_worker():
-
+    provider = payment_provider_adapter
 
     def start_payment(payment: Payment):
+        print("start")
+        provider.create_payout(payment)
 
 
     def payment_massage_handler(ch: pika.channel.Channel, method, properties, body):
         payment_message = json.loads(body.decode())
-        print(payment_message["pam"])
+        payment = Payment.objects.get(pk=int(payment_message["id"]))
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel = payment_consumer_service.create_consumer()

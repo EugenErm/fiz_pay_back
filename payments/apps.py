@@ -9,14 +9,17 @@ class PaymentsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'payments'
 
+    def ready(self):
+        def start_thread_pool(task, worker_pool=10):
+            threads = []
+            for i in range(worker_pool):
+                t = threading.Thread(target=task, daemon=True)
+                t.start()
+                threads.append(t)
+            return threads
 
-def start_thread_pool(task, worker_pool = 10):
-    threads = []
-    for i in range(worker_pool):
-        t = threading.Thread(target=task)
-        t.start()
-        threads.append(t)
-    return threads
+        start_thread_pool(payment_worker)
 
 
-start_thread_pool(payment_worker)
+
+
