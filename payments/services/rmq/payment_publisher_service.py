@@ -5,6 +5,9 @@ import pika
 from . import settings
 from ...models import Payment
 
+import logging
+logger = logging.getLogger('app')
+
 
 class _PaymentPublisherService:
 
@@ -19,10 +22,8 @@ class _PaymentPublisherService:
                                    })
 
     def start_payment_event(self, payment: Payment):
+        print("s " + str(payment.operation_id))
         message = bytes(json.dumps({
-            "pam": payment.card_data,
-            "amount": payment.amount,
-            "fio": payment.fio,
             "id": payment.id
         }).encode('utf-8'))
 
@@ -33,6 +34,8 @@ class _PaymentPublisherService:
             properties=pika.BasicProperties(
                 delivery_mode=2,  # make message persistent
             ))
+
+        logger.debug(f"Message << {message} >> send")
 
 
 

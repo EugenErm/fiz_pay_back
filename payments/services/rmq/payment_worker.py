@@ -3,13 +3,14 @@ import logging
 
 import pika.channel
 
-from . import payment_consumer
+
 from . import settings
 
 import threading
 
 from payments.models import Payment
 
+import logging
 logger = logging.getLogger(__name__)
 
 def callback(ch: pika.channel.Channel, method, properties, body):
