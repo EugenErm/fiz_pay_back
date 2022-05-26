@@ -28,7 +28,7 @@ class _PaymentPublisherService:
         }).encode('utf-8'))
 
         self.channel.basic_publish(
-            exchange=settings.RMQ_INPUT_EXCHANGE,
+            exchange="",
             routing_key=settings.RMQ_INPUT_QUEUE,
             body=message,
             properties=pika.BasicProperties(
@@ -36,6 +36,7 @@ class _PaymentPublisherService:
             ))
 
         logger.debug(f"Message << {message} >> send")
+
 
 
 

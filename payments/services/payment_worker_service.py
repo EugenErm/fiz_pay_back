@@ -24,9 +24,8 @@ def payment_worker():
     logger.debug(f"Thread '{threading.current_thread().name}' started")
 
     def start_payment(payment: Payment):
-        print(111)
-        pass
-        # result = provider.create_payout(payment)
+        result = provider.create_payout(payment)
+        print(result)
 
     def get_payment_status(payment: Payment):
         result = provider.get_payout_by_id(payment)
@@ -41,21 +40,20 @@ def payment_worker():
         payment_message = json.loads(body.decode())
 
         payment = Payment.objects.get(pk=int(payment_message["id"]))
-
-        if payment.operation_id:
-            payment.operation_id = payment.operation_id + 1
-        else:
-            payment.operation_id = 1
-        payment.save()
+        print(payment)
         print(payment.operation_id)
 
         if not payment:
-
+            # Если операции несуществует, выводим ошибку
+            logger.error(f"{threading.current_thread().name} -- Payment ID: {payment_message['id']} not found")
             ch.basic_ack(delivery_tag=method.delivery_tag)
-
-
+            return
         if not payment.operation_id:
+            # Если у операции отсудствует внешний ID - создаем операцию
+            logger.debug(f"'{threading.current_thread().name} -- Start payment ID: {payment_message['id']}")
             start_payment(payment)
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            return
 
     channel = payment_consumer_service.create_consumer()
     channel.basic_qos(prefetch_count=1)
