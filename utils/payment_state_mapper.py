@@ -1,4 +1,4 @@
-def payment_state_mapper(state, sub_state):
+def payment_state_mapper(state, sub_state, code):
     if state == '0':
         if sub_state == '0':
             return 'Новый'
@@ -58,6 +58,39 @@ def payment_state_mapper(state, sub_state):
         return "Статус успешного проведения (финальный)"
 
     if state == '80':
+        if sub_state == '0':
+            if code == '0':
+                return "Успех"
+            if code == '-100':
+                return "Дублирующиеся атрибуты переданы"
+            if code == '-2':
+                return "Ошибка платежного инструмента"
+            if code in ['1', '2']:
+                return "Неверно указан номер"
+            if code == '3':
+                return "Сумма вне допустимого диапазона"
+            if code == '4':
+                return "Сервер провайдера недоступен"
+            if code == '5':
+                return "Ошибка авторизации"
+            if code == '6':
+                return "Сервер оператора недоступен"
+            if code == '7':
+                return "Общая ошибка провайдера"
+            if code == '8':
+                return "Нехватка средств"
+            if code == '9':
+                return "Неверные параметры проведения"
+            if code == '10':
+                return "Фатальная ошибка провайдера"
+            if code == '30':
+                return "Недостаточно средств для добавления платежа"
+            if code == '33':
+                return "Сервис недоступен для данного агента"
+            if code == '50':
+                return "Не прошел верификацию"
+            return "Не известный код"
+
         if sub_state in ['1', '2', '3']:
             return 'Платеж отменен вручную'
         if sub_state == '4':
@@ -68,5 +101,11 @@ def payment_state_mapper(state, sub_state):
             return 'Другая ошибка'
         if sub_state == '9':
             return 'Возврат средств'
+
+    if state == '-1':
+        return "Ошибка вставки операции в БД (нефинальный)"
+
+    if state == '-2':
+        return "Платеж не найден при проверке статуса (финальный)"
 
     return f"Неизвестная ошибка st: {state}; subst: {sub_state}"

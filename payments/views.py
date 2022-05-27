@@ -3,9 +3,10 @@ import os
 
 import pandas
 from django.http import HttpResponse
-from .forms import UploadPaymentRegisterForm
+from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
+from .forms import UploadPaymentRegisterForm
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
 
@@ -28,15 +29,18 @@ def upload_payment_list_file(request):
 def get_payment_list(request):
     payments = payment_service.get_payment_list()
     return HttpResponse(json.dumps(payments, default=str))
-    # if request.GET:
-    #     return HttpResponse("Hello")
 
+@csrf_exempt
+def get_payment_by_id(request, payment_id: int):
+    payments = payment_service.get_payment_by_id(payment_id)
+    return HttpResponse(serializers.serialize('json', [payments]))
 
 @csrf_exempt
 def start_payment_by_ids(request):
     if request.method == 'POST':
         payments_ids = json.loads(request.body)
-        payment_service.start_payment(payments_ids['ids'][0])
+        for id in payments_ids['ids']:
+            payment_service.start_payment(id)
         return HttpResponse("Ok")
     return HttpResponse("Err")
 

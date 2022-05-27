@@ -1,8 +1,10 @@
 import datetime
+import logging
 from os import path
 from xml.etree.ElementTree import Element, tostring
 
 import requests
+import requests_pkcs12
 import xmltodict
 
 from payments.models import Payment
@@ -13,18 +15,29 @@ from payments.models import Payment
 
 class _PaymentProviderSlAdapter:
     # API_URL = "https://business.selfwork.ru/external/extended-cert"
-    API_URL = "https://testing.selfwork.ru/external/extended-cert"
+    # API_URL = "https://testing.selfwork.ru/external/extended-cert"
 
-    PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
-    CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
+    # PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
+    # CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
+
+    API_URL = "https://business.selfwork.ru/external/extended-cert"
+    P12_CRT_PATH = path.join(path.dirname(__file__), 'point_588.p12')
+    P12_PASS = "t4K3o3QDrg"
+    SERVICE = '219'
+    POINT = "588"
 
     DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
+    logger = logging.getLogger('app')
+
     def __init__(self, point):
-        self.POINT = point
-        self.SERVICE = '189'
+        pass
+        # self.POINT = point
+        # self.SERVICE = '189'
 
     def create_payout(self, payment_data: Payment):
+        self.logger.debug(f"PaymentProviderSlAdapter -- create_payout - Payment: {payment_data}")
+
         payment = Element('payment', {
             "id": str(payment_data.id),
             "sum": str(payment_data.amount),
@@ -38,8 +51,9 @@ class _PaymentProviderSlAdapter:
 
         return self._status_to_resp_format(self._request(payment))
 
-    def get_payout_by_id(self, id):
-        resp = self._request(Element('status', {"id": str(id)}))
+    def get_payout_by_id(self, payment: Payment):
+        self.logger.debug(f"PaymentProviderSlAdapter -- get_payout_by_id - Payment ID: {payment.id}; trans: {payment.operation_id}")
+        resp = self._request(Element('status', {"id": str(payment.id)}))
         return self._status_to_resp_format(resp)
 
     def get_balance(self) -> int:
@@ -50,10 +64,18 @@ class _PaymentProviderSlAdapter:
         req = Element('request', {'point': str(self.POINT)})
         req.append(req_xml_element)
 
-        print(tostring(req))
+        self.logger.debug(f"PaymentProviderSlAdapter -- _request - Request: {tostring(req)}")
 
-        res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
-        print(res.text)
+        # res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
+        res = requests_pkcs12.post(
+            self.API_URL,
+            data=tostring(req),
+            pkcs12_filename=self.P12_CRT_PATH,
+            pkcs12_password=self.P12_PASS
+        )
+
+        self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response status: {res}")
+        self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response: {res.text}")
         return xmltodict.parse(res.text)
 
     def _status_to_resp_format(self, resp):
@@ -64,21 +86,33 @@ class _PaymentProviderSlAdapter:
             "substate": resp['response']['result']['@substate'],
             "code": resp['response']['result']['@code'],
             "final": resp['response']['result']['@final'],
-            "trans": resp['response']['result']['@trans'],
-            "server_time": resp['response']['result']['@server_time'],
         }
+
+        if resp['response']['result'].get('@trans'):
+            status['trans'] = resp['response']['result']['@trans']
+
+        if resp['response']['result'].get('@server_time'):
+            status['server_time'] = resp['response']['result']['@server_time']
 
         if resp['response']['result'].get('@process_time'):
             status['process_time'] = resp['response']['result']['@process_time']
 
         if resp['response']['result'].get('attribute'):
-            if resp['response']['result']['attribute'].get('@name') == 'provider-error-text':
-                status['provider-error-text'] = resp['response']['result']['attribute']['@value']
+            attr_resp = resp['response']['result'].get('attribute')
+            if type(attr_resp) == list:
+                for attr in attr_resp:
+                    if attr.get('@name') == 'provider-error-text':
+                        status['provider-error-text'] = attr['@value']
+            else:
+                if resp['response']['result']['attribute'].get('@name') == 'provider-error-text':
+                    status['provider-error-text'] = resp['response']['result']['attribute']['@value']
 
         return status
 
     def _format_date(self, date: datetime.datetime):
         return date.strftime(self.DATE_FORMAT)
+
+
 
 
 payment_provider_adapter = _PaymentProviderSlAdapter(point='274')
