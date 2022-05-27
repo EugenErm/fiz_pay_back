@@ -20,11 +20,18 @@ class _PaymentProviderSlAdapter:
     # PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
     # CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
 
-    API_URL = "https://business.selfwork.ru/external/extended-cert"
-    P12_CRT_PATH = path.join(path.dirname(__file__), 'point_588.p12')
-    P12_PASS = "t4K3o3QDrg"
-    SERVICE = '219'
-    POINT = "588"
+    # API_URL = "https://business.selfwork.ru/external/extended-cert"
+    # P12_CRT_PATH = path.join(path.dirname(__file__), 'point_588.p12')
+    # P12_PASS = "t4K3o3QDrg"
+    # SERVICE = '219'
+    # POINT = "588"
+
+    API_URL = "https://testing.selfwork.ru/external/extended-cert"
+    PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
+    CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
+    SERVICE = '189'
+    POINT = "274"
+
 
     DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -66,13 +73,13 @@ class _PaymentProviderSlAdapter:
 
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Request: {tostring(req)}")
 
-        # res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
-        res = requests_pkcs12.post(
-            self.API_URL,
-            data=tostring(req),
-            pkcs12_filename=self.P12_CRT_PATH,
-            pkcs12_password=self.P12_PASS
-        )
+        res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
+        # res = requests_pkcs12.post(
+        #     self.API_URL,
+        #     data=tostring(req),
+        #     pkcs12_filename=self.P12_CRT_PATH,
+        #     pkcs12_password=self.P12_PASS
+        # )
 
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response status: {res}")
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response: {res.text}")

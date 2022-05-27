@@ -2,7 +2,8 @@ import json
 import os
 
 import pandas
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.core.paginator import Paginator
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
@@ -27,13 +28,25 @@ def upload_payment_list_file(request):
 
 @csrf_exempt
 def get_payment_list(request):
-    payments = payment_service.get_payment_list()
-    return HttpResponse(json.dumps(payments, default=str))
+    page_size = (request.GET.get("pageSize") or 20)
+    page_index = (request.GET.get("pageIndex") or 0)
+
+    payments = payment_service.get_payment_list().order_by("-pk")
+    paginator = Paginator(payments, page_size)
+    page = paginator.get_page(page_index)
+
+    return JsonResponse(
+        {
+            "data": list(page.object_list.values()),
+            "totalCount": paginator.count
+        }
+    )
+
 
 @csrf_exempt
 def get_payment_by_id(request, payment_id: int):
-    payments = payment_service.get_payment_by_id(payment_id)
-    return HttpResponse(serializers.serialize('json', [payments]))
+    payment = payment_service.get_payment_by_id(payment_id)
+    return HttpResponse(serializers.serialize('json', [payment]))
 
 @csrf_exempt
 def start_payment_by_ids(request):

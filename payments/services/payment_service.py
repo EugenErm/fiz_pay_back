@@ -49,8 +49,8 @@ class _PaymentService:
 
         self.payment_publisher_service.start_payment_event(payment)
 
-    def get_payment_list(self) -> list:
-        payments = list(self.payment_model.objects.all().values())
+    def get_payment_list(self):
+        payments = self.payment_model.objects.all()
         return payments
 
     def clear_payment_list(self):
