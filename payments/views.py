@@ -1,12 +1,13 @@
 import json
-import os
 
-import pandas
 from django.http import HttpResponse, JsonResponse
+from django.forms.models import model_to_dict
 from django.core.paginator import Paginator
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
+from utils.validators.is_credit_card_validator import is_credit_card
+from .dto.create_payment_dto import CreatePaymentDto
 from .forms import UploadPaymentRegisterForm
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
@@ -22,9 +23,28 @@ def upload_payment_list_file(request):
                 return HttpResponse('Ok')
             except Exception as e:
                 return HttpResponse(e)
-        return HttpResponse(json.dumps({"err": form.errors}))
-    return HttpResponse(json.dumps({"err": "is Not Post"}))
+        return JsonResponse({"err": form.errors})
+    return JsonResponse({"err": "is Not Post"})
 
+@csrf_exempt
+def payments(request):
+    if request.method == 'POST':
+        return create_payment(request)
+    if request.method == "GET":
+        return get_payment_list(request)
+
+@csrf_exempt
+def create_payment(request):
+    create_payment_dto = CreatePaymentDto.parse_raw(request.body)
+
+    if not is_credit_card(create_payment_dto.pam):
+        return JsonResponse({"status": "err", "message": "Проверьте номер карты"})
+
+    payment = payment_service.create_payment(create_payment_dto)
+    return JsonResponse({
+        "status": "ok",
+        "data": model_to_dict(payment)
+    })
 
 @csrf_exempt
 def get_payment_list(request):
@@ -41,7 +61,6 @@ def get_payment_list(request):
             "totalCount": paginator.count
         }
     )
-
 
 @csrf_exempt
 def get_payment_by_id(request, payment_id: int):
