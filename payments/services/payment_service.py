@@ -57,17 +57,8 @@ class _PaymentService:
         self.payment_model.objects.all().delete()
 
     @transaction.atomic()
-    def start_payment_by_id(self, id: int):
-        payment = Payment.objects.get(pk=int(id))
-        if payment and payment.status == PaymentStatusEnum.NEW:
-
-            payment.status = PaymentStatusEnum.IN_PROGRESS
-            payment.save()
-
-    @transaction.atomic()
     def refresh_payment_status_from_provider_payment(self, payment_id: int, provider_payment):
         self.logger.debug(f"_PaymentService refresh_payment_status_from_provider_payment payment ID: {payment_id}; provider_payment: {provider_payment}")
-
         payment = Payment.objects.get(pk=payment_id)
 
         if provider_payment.get("trans"):
@@ -75,6 +66,13 @@ class _PaymentService:
 
         if provider_payment.get("provider-error-text"):
             payment.provide_error_text = provider_payment['provider-error-text']
+
+        print(provider_payment.get("server_time"))
+        if provider_payment.get("server_time"):
+            payment.start_payment_time = provider_payment['server_time']
+
+        if provider_payment.get("process_time"):
+            payment.process_payment_time = provider_payment['process_time']
 
         if provider_payment.get("final"):
             payment.final = provider_payment['final']

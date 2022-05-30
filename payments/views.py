@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from utils.validators.is_credit_card_validator import is_credit_card
 from .dto.create_payment_dto import CreatePaymentDto
 from .forms import UploadPaymentRegisterForm
+from .services.balance_service import balance_service
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
 
@@ -26,12 +27,14 @@ def upload_payment_list_file(request):
         return JsonResponse({"err": form.errors})
     return JsonResponse({"err": "is Not Post"})
 
+
 @csrf_exempt
 def payments(request):
     if request.method == 'POST':
         return create_payment(request)
     if request.method == "GET":
         return get_payment_list(request)
+
 
 @csrf_exempt
 def create_payment(request):
@@ -46,14 +49,18 @@ def create_payment(request):
         "data": model_to_dict(payment)
     })
 
+
 @csrf_exempt
 def get_payment_list(request):
     page_size = (request.GET.get("pageSize") or 20)
     page_index = (request.GET.get("pageIndex") or 0)
 
+    print(page_size)
+    print(page_index)
+
     payments = payment_service.get_payment_list().order_by("-pk")
     paginator = Paginator(payments, page_size)
-    page = paginator.get_page(page_index)
+    page = paginator.page(int(page_index) + 1)
 
     return JsonResponse(
         {
@@ -62,10 +69,15 @@ def get_payment_list(request):
         }
     )
 
+
 @csrf_exempt
 def get_payment_by_id(request, payment_id: int):
     payment = payment_service.get_payment_by_id(payment_id)
-    return HttpResponse(serializers.serialize('json', [payment]))
+    return JsonResponse({
+        "status": "ok",
+        "data": model_to_dict(payment)
+    })
+
 
 @csrf_exempt
 def start_payment_by_ids(request):
@@ -73,8 +85,25 @@ def start_payment_by_ids(request):
         payments_ids = json.loads(request.body)
         for id in payments_ids['ids']:
             payment_service.start_payment(id)
-        return HttpResponse("Ok")
-    return HttpResponse("Err")
+        return JsonResponse({
+            "status": "ok",
+            "data": None
+        })
+    return JsonResponse({
+        "status": "err",
+        "data": None
+    })
+
+
+@csrf_exempt
+def get_balance(request):
+    if request.method == 'GET':
+        balance = balance_service.get_balance()
+        return JsonResponse({
+            "status": "ok",
+            "data": balance
+        })
+
 
 @csrf_exempt
 def clear_payment_list(request):
