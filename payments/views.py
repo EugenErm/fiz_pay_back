@@ -20,12 +20,36 @@ def upload_payment_list_file(request):
         form = UploadPaymentRegisterForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                payment_import_service.import_payments_from_file(form.files['file'])
-                return HttpResponse('Ok')
+                errors, result = payment_import_service.import_payments_from_file(form.files['file'])
+
+                if len(errors) != 0:
+                    return JsonResponse({
+                        "status": "err",
+                        "message": "Найдены ошибки в платежах",
+                        "data": errors
+                    })
+                else:
+                    return JsonResponse({
+                        "status": "ok",
+                        "data": list(map(lambda payment: model_to_dict(payment), result))
+                    })
+
+
+
             except Exception as e:
-                return HttpResponse(e)
-        return JsonResponse({"err": form.errors})
-    return JsonResponse({"err": "is Not Post"})
+                return JsonResponse({
+                    "status": "err",
+                    "message": "Неизвестная ошибка",
+                    "data": e
+                })
+
+    return JsonResponse(
+        {
+            "status": "err",
+            "message": "Ошибка отправки формы",
+            "data": form.errors
+        }
+    )
 
 
 @csrf_exempt
@@ -54,9 +78,6 @@ def create_payment(request):
 def get_payment_list(request):
     page_size = (request.GET.get("pageSize") or 20)
     page_index = (request.GET.get("pageIndex") or 0)
-
-    print(page_size)
-    print(page_index)
 
     payments = payment_service.get_payment_list().order_by("-pk")
     paginator = Paginator(payments, page_size)

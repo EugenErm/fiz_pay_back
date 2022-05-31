@@ -11,7 +11,7 @@ class PaymentsConfig(AppConfig):
 
     def ready(self):
         from payments.services.payment_worker_service import start_thread_pool
-        start_thread_pool()
+        # start_thread_pool()
 
 
 

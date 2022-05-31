@@ -19,17 +19,17 @@ class _PaymentImportService:
         xls_ext = ['.xlsx', '.xls']
 
         if ext.lower() in csv_ext:
-            self.import_payments_from_pandas_df(pandas.read_csv(f, dtype="string").loc[:, self.col_list])
+            return self.import_payments_from_pandas_df(pandas.read_csv(f, dtype="string").loc[:, self.col_list])
         elif ext.lower() in xls_ext:
-            self.import_payments_from_pandas_df(
+            return self.import_payments_from_pandas_df(
                 pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:, self.col_list])
 
     def import_payments_from_pandas_df(self, payments: pandas.DataFrame):
         file_errors = self._validate_payments(payments)
         if not len(file_errors) == 0:
-            raise Exception(file_errors)
+            return file_errors, []
 
-        self._create(payments)
+        return file_errors, self._create(payments)
 
     def _validate_payments(self, payments: pandas.DataFrame):
         if len(payments) > 10000:
@@ -42,15 +42,17 @@ class _PaymentImportService:
         return file_errors
 
     def _create(self, payments: pandas.DataFrame):
+        created_payments = []
         for index, payment in payments.iterrows():
-            self.payment_service.create_payment(CreatePaymentDto.parse_obj(
+            created_payments.append(self.payment_service.create_payment(CreatePaymentDto.parse_obj(
                 {
                     "pam": payment['pam'],
                     "amount": payment['amount'],
                     "name": payment['name'],
                     "last_name": payment['lastname'],
                     "middle_name": None if payment.isna()['middlename'] else payment['middlename']
-                }))
+                })))
+        return created_payments
 
 
 payment_import_service = _PaymentImportService()
