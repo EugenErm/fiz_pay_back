@@ -3,7 +3,6 @@ import json
 from django.http import HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from django.core.paginator import Paginator
-from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
 from utils.validators.is_credit_card_validator import is_credit_card
@@ -17,23 +16,37 @@ from .services.payment_service import payment_service
 @csrf_exempt
 def upload_payment_list_file(request):
     if request.method == 'POST':
-        form = UploadPaymentRegisterForm(request.POST, request.FILES)
-        if form.is_valid():
+        upload_form = UploadPaymentRegisterForm(request.POST, request.FILES)
+        if upload_form.is_valid():
             try:
-                errors, result = payment_import_service.import_payments_from_file(form.files['file'])
+                payments_pandas = payment_import_service.import_payments_from_file(upload_form.files['file'])
 
-                if len(errors) != 0:
-                    return JsonResponse({
-                        "status": "err",
-                        "message": "Найдены ошибки в платежах",
-                        "data": errors
-                    })
-                else:
+                if not payment_import_service.validate_limits(payments_pandas):
                     return JsonResponse({
                         "status": "ok",
-                        "data": list(map(lambda payment: model_to_dict(payment), result))
+                        "data": {
+                            "status": 'err',
+                            "errorType": 'limits',
+                            "message": "Превышено максимальное количество платежей"
+                        }
                     })
 
+                errors = payment_import_service.validate_payments(payments_pandas)
+                if len(errors) != 0:
+                    return JsonResponse({
+                        "status": "ok",
+                        "data": {
+                            "status": 'err',
+                            "errorType": 'validation',
+                            "errorList": errors
+                        }
+                    })
+
+                created_payments = payment_import_service.create(payments_pandas)
+                return JsonResponse({
+                    "status": "ok",
+                    "data": list(map(lambda payment: model_to_dict(payment), created_payments))
+                })
 
 
             except Exception as e:
@@ -43,13 +56,13 @@ def upload_payment_list_file(request):
                     "data": e
                 })
 
-    return JsonResponse(
-        {
-            "status": "err",
-            "message": "Ошибка отправки формы",
-            "data": form.errors
-        }
-    )
+        return JsonResponse(
+            {
+                "status": "err",
+                "message": "Ошибка отправки формы",
+                "data": upload_form.errors
+            }
+        )
 
 
 @csrf_exempt
