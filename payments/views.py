@@ -7,11 +7,35 @@ from django.views.decorators.csrf import csrf_exempt
 
 from utils.validators.is_credit_card_validator import is_credit_card
 from .dto.create_payment_dto import CreatePaymentDto
-from .forms import UploadPaymentRegisterForm
+from .forms import UploadPaymentRegisterForm, UploadCertForm
+from .models import PaymentCert
 from .services.balance_service import balance_service
+from .services.payment_cert_service import payment_cert_service
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
 
+
+@csrf_exempt
+def upload_cert(request):
+    if request.method == 'POST':
+        upload_form = UploadCertForm(request.POST, request.FILES)
+        print(upload_form.data)
+
+        payment_cert_service.load_cert(
+            point=upload_form.data['point'],
+            name=upload_form.data['name'],
+            password=upload_form.data['password'],
+            cert_file=upload_form.files['file'])
+
+
+        return JsonResponse(
+            {
+                "status": "ok"
+            }
+        )
+
+
+# Payments
 
 @csrf_exempt
 def upload_payment_list_file(request):

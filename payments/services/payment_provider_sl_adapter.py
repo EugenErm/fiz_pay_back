@@ -11,6 +11,7 @@ from payments.models import Payment
 
 
 # Новый сертификат сгенерирован, не забудьте сохранить изменения. 274 Пароль: noWY94QwVv
+from payments.services.payment_cert_service import payment_cert_service
 
 
 class _PaymentProviderSlAdapter:
@@ -37,10 +38,8 @@ class _PaymentProviderSlAdapter:
 
     logger = logging.getLogger('app')
 
-    def __init__(self, point):
-        pass
-        # self.POINT = point
-        # self.SERVICE = '189'
+    def __init__(self):
+        self.payment_cert_service = payment_cert_service
 
     def create_payout(self, payment_data: Payment):
         self.logger.debug(f"PaymentProviderSlAdapter -- create_payout - Payment: {payment_data}")
@@ -68,18 +67,26 @@ class _PaymentProviderSlAdapter:
         return int(balance)
 
     def _request(self, req_xml_element: Element):
-        req = Element('request', {'point': str(self.POINT)})
+        cert = self.payment_cert_service.get_last_cert()
+
+        req = Element('request', {'point': str(cert.point)})
         req.append(req_xml_element)
 
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Request: {tostring(req)}")
 
-        res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
-        # res = requests_pkcs12.post(
-        #     self.API_URL,
-        #     data=tostring(req),
-        #     pkcs12_filename=self.P12_CRT_PATH,
-        #     pkcs12_password=self.P12_PASS
-        # )
+        # res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
+
+
+        print(path.join(path.dirname(__file__), 'point_588.p12'))
+        print(cert.p12cert.path)
+
+
+        res = requests_pkcs12.post(
+            self.API_URL,
+            data=tostring(req),
+            pkcs12_filename=cert.p12cert.path,
+            pkcs12_password=cert.password
+        )
 
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response status: {res}")
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Response: {res.text}")
@@ -122,4 +129,5 @@ class _PaymentProviderSlAdapter:
 
 
 
-payment_provider_adapter = _PaymentProviderSlAdapter(point='274')
+
+payment_provider_adapter = _PaymentProviderSlAdapter()

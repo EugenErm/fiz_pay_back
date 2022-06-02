@@ -32,10 +32,28 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment(" \
-               f"id: {self.pk};" \
+               f" id: {self.pk};" \
                f" trans: {self.operation_id};" \
                f" status: {self.status};" \
                f" final: {self.final};" \
                f" status_message: {self.status_message};" \
                f" provide_error_text: {self.provide_error_text};" \
                f" amount:{self.amount})"
+
+
+class PaymentCert(models.Model):
+
+    point = models.CharField(max_length=10)
+    name = models.CharField(max_length=50)
+    password = models.CharField(max_length=50)
+    p12cert = models.FileField(upload_to='certificates/')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"PaymentCert(" \
+               f" id: {self.pk};" \
+               f" name: {self.name};" \
+               f" point:{self.point})"
+

@@ -2,6 +2,7 @@ from django import forms
 import os
 from django.core.exceptions import ValidationError
 
+
 def validate_file_extension(value):
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
     valid_extensions = ['.csv', '.xlsx']
@@ -11,3 +12,9 @@ def validate_file_extension(value):
 
 class UploadPaymentRegisterForm(forms.Form):
     file = forms.FileField(label="file", required=True, validators=[validate_file_extension])
+
+
+class UploadCertForm(forms.Form):
+    file = forms.FileField(label="file", required=True)
+    point = forms.FileField(label="file", required=True)
+    password = forms.FileField(label="file", required=True)
