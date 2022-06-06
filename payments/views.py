@@ -1,19 +1,20 @@
 import json
 
-from django.http import HttpResponse, JsonResponse
-from django.forms.models import model_to_dict
 from django.core.paginator import Paginator
+from django.forms.models import model_to_dict
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from utils.validators.is_credit_card_validator import is_credit_card
 from .dto.create_payment_dto import CreatePaymentDto
 from .forms import UploadPaymentRegisterForm, UploadCertForm
-from .models import PaymentCert
 from .services.balance_service import balance_service
 from .services.payment_cert_service import payment_cert_service
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
 
+
+# Payments Cert
 
 @csrf_exempt
 def upload_cert(request):
@@ -27,12 +28,32 @@ def upload_cert(request):
             password=upload_form.data['password'],
             cert_file=upload_form.files['file'])
 
-
         return JsonResponse(
             {
                 "status": "ok"
             }
         )
+
+
+@csrf_exempt
+def get_active_certificate(request):
+    if request.method == 'GET':
+        active_cert = payment_cert_service.get_last_cert()
+
+        if active_cert:
+            return JsonResponse(
+                {
+                    "status": "ok",
+                    "data": model_to_dict(active_cert, ['id', 'name', 'point']),
+                }
+            )
+        else:
+            return JsonResponse(
+                {
+                    "status": "ok",
+                    "data": None,
+                }
+            )
 
 
 # Payments

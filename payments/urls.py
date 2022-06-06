@@ -9,5 +9,7 @@ urlpatterns = [
     path('balance/', views.get_balance),
     path('clear/', views.clear_payment_list),
     path('import/', views.upload_payment_list_file),
+
     path('cert/load/', views.upload_cert),
+    path('cert/', views.get_active_certificate),
 ]
