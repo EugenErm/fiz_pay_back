@@ -16,23 +16,23 @@ from .services.payment_service import payment_service
 
 # Payments Cert
 
-@csrf_exempt
-def upload_cert(request):
-    if request.method == 'POST':
-        upload_form = UploadCertForm(request.POST, request.FILES)
-        print(upload_form.data)
-
-        payment_cert_service.load_cert(
-            point=upload_form.data['point'],
-            name=upload_form.data['name'],
-            password=upload_form.data['password'],
-            cert_file=upload_form.files['file'])
-
-        return JsonResponse(
-            {
-                "status": "ok"
-            }
-        )
+# @csrf_exempt
+# def upload_cert(request):
+#     if request.method == 'POST':
+#         upload_form = UploadCertForm(request.POST, request.FILES)
+#         print(upload_form.data)
+#
+#         payment_cert_service.load_cert(
+#             point=upload_form.data['point'],
+#             name=upload_form.data['name'],
+#             password=upload_form.data['password'],
+#             cert_file=upload_form.files['file'])
+#
+#         return JsonResponse(
+#             {
+#                 "status": "ok"
+#             }
+#         )
 
 
 @csrf_exempt
@@ -90,9 +90,11 @@ def upload_payment_list_file(request):
                 created_payments = payment_import_service.create(payments_pandas)
                 return JsonResponse({
                     "status": "ok",
-                    "data": list(map(lambda payment: model_to_dict(payment), created_payments))
+                    "data": {
+                        "status": 'success',
+                        "payments": list(map(lambda payment: model_to_dict(payment), created_payments))
+                    }
                 })
-
 
             except Exception as e:
                 return JsonResponse({

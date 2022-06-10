@@ -43,7 +43,7 @@ class _PaymentImportService:
         return file_errors
 
     def create(self, payments: pandas.DataFrame):
-        if self.validate_limits(payments):
+        if not self.validate_limits(payments):
             raise Exception("limit error")
 
         if self.validate_payments(payments):

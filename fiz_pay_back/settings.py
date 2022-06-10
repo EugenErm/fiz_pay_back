@@ -35,8 +35,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'djoser',
+    'corsheaders',
     'payments.apps.PaymentsConfig',
-    'corsheaders'
+    'paymentcert.apps.PaymentcertConfig'
 ]
 
 MIDDLEWARE = [
@@ -148,3 +152,12 @@ LOGGING = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAdminUser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+}

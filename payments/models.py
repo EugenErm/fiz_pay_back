@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class PaymentStatusEnum(models.TextChoices):
@@ -27,6 +28,8 @@ class Payment(models.Model):
     amount = models.IntegerField()
     metadata = models.TextField(default='0')
 
+    user = models.ForeignKey(User, verbose_name="Пользователь", on_delete=models.CASCADE)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -39,21 +42,3 @@ class Payment(models.Model):
                f" status_message: {self.status_message};" \
                f" provide_error_text: {self.provide_error_text};" \
                f" amount:{self.amount})"
-
-
-class PaymentCert(models.Model):
-
-    point = models.CharField(max_length=10)
-    name = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    p12cert = models.FileField(upload_to='certificates/')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"PaymentCert(" \
-               f" id: {self.pk};" \
-               f" name: {self.name};" \
-               f" point:{self.point})"
-
