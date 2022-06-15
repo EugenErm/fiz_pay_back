@@ -73,12 +73,8 @@ class _PaymentProviderSlAdapter:
         req.append(req_xml_element)
 
         self.logger.debug(f"PaymentProviderSlAdapter -- _request - Request: {tostring(req)}")
-
-        # res = requests.post(self.API_URL, data=tostring(req), cert=(self.PRIVATE_KEY_PATH, self.CERT_PATH,))
-
-
-        print(path.join(path.dirname(__file__), 'point_588.p12'))
-        print(cert.p12cert.path)
+        self.logger.debug(f"PaymentProviderSlAdapter -- _request - cert: {cert}")
+        self.logger.debug(f"PaymentProviderSlAdapter -- _request - url: {self.API_URL}")
 
 
         res = requests_pkcs12.post(

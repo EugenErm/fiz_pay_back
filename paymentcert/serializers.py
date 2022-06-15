@@ -14,5 +14,5 @@ class PaymentCertCreateSerializer(serializers.ModelSerializer):
 class PaymentCertListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentCert
-        fields = ['id', 'name', 'point']
+        fields = ['id', 'name', 'point', 'user']
 

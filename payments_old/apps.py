@@ -10,8 +10,7 @@ class PaymentsConfig(AppConfig):
     name = 'payments'
 
     def ready(self):
-        pass
-        # from payments.services.payment_worker_service import start_thread_pool
+        from payments.services.payment_worker_service import start_thread_pool
         # start_thread_pool()
 
 

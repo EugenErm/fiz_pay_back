@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from .validators import is_credit_card_validator
-
 
 class PaymentStatusEnum(models.TextChoices):
     NEW = 'NEW'
@@ -25,11 +23,8 @@ class Payment(models.Model):
     # ---
     status = models.CharField(max_length=20, choices=PaymentStatusEnum.choices, default=PaymentStatusEnum.NEW)
 
-    name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100, default='-')
-    middle_name = models.CharField(max_length=100, null=True)
-
-    card_data = models.CharField(max_length=20, validators=[is_credit_card_validator])
+    fio = models.CharField(max_length=150)
+    card_data = models.CharField(max_length=150)
     amount = models.IntegerField()
     metadata = models.TextField(default='0')
 

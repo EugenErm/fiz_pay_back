@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django.contrib.auth.models import User
 
 from payments.dto.create_payment_dto import CreatePaymentDto
 from payments.exceptions.incorrect_payment_status_exception import IncorrectPaymentStatusException
@@ -24,7 +25,12 @@ class _PaymentService:
         fio = f"{create_payment_dto.last_name} {create_payment_dto.name}"
         if create_payment_dto.middle_name:
             fio += f" {create_payment_dto.middle_name}"
-        payment = self.payment_model(fio=fio, card_data=create_payment_dto.pam, amount=create_payment_dto.amount)
+        payment = self.payment_model(
+            fio=fio,
+            card_data=create_payment_dto.pam,
+            amount=create_payment_dto.amount,
+            user=User.objects.last()
+        )
         payment.save()
 
         return payment

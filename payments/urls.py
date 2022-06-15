@@ -1,13 +1,8 @@
-from django.urls import path
+from rest_framework.routers import SimpleRouter
 
 from . import views
 
-urlpatterns = [
-    path('', views.payments),
-    path('<int:payment_id>/', views.get_payment_by_id),
-    path('start/', views.start_payment_by_ids),
-    path('balance/', views.get_balance),
-    path('clear/', views.clear_payment_list),
-    path('import/', views.upload_payment_list_file),
-    path('cert/', views.get_active_certificate),
-]
+
+router = SimpleRouter()
+router.register(r'payments', views.PaymentsViewSet)
+urlpatterns = router.urls

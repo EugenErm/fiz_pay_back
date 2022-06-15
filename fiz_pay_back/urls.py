@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/v1/auth/', include('djoser.urls')),
     path('payments/', include('payments.urls')),
     path('api/v1/', include('paymentcert.urls')),
+    path('api/v1/', include('payments.urls')),
 ]
