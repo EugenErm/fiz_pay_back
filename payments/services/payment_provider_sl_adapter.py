@@ -57,9 +57,9 @@ class _PaymentProviderSlAdapter:
 
         return self._status_to_resp_format(self._request(payment))
 
-    def get_payout_by_id(self, payment: Payment):
-        self.logger.debug(f"PaymentProviderSlAdapter -- get_payout_by_id - Payment ID: {payment.id}; trans: {payment.operation_id}")
-        resp = self._request(Element('status', {"id": str(payment.id)}))
+    def get_payout_by_id(self, id: int):
+        self.logger.debug(f"PaymentProviderSlAdapter -- get_payout_by_id - Payment ID: {id}")
+        resp = self._request(Element('status', {"id": str(id)}))
         return self._status_to_resp_format(resp)
 
     def get_balance(self) -> int:

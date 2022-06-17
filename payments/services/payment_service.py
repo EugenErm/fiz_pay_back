@@ -24,7 +24,11 @@ class _PaymentService:
         fio = f"{create_payment_dto.last_name} {create_payment_dto.name}"
         if create_payment_dto.middle_name:
             fio += f" {create_payment_dto.middle_name}"
-        payment = self.payment_model(fio=fio, card_data=create_payment_dto.pam, amount=create_payment_dto.amount)
+        payment = self.payment_model(
+            fio=fio,
+            card_data=create_payment_dto.pam,
+            amount=create_payment_dto.amount,
+            user_id=1)
         payment.save()
 
         return payment
@@ -67,7 +71,6 @@ class _PaymentService:
         if provider_payment.get("provider-error-text"):
             payment.provide_error_text = provider_payment['provider-error-text']
 
-        print(provider_payment.get("server_time"))
         if provider_payment.get("server_time"):
             payment.start_payment_time = provider_payment['server_time']
 
@@ -86,6 +89,8 @@ class _PaymentService:
         if provider_payment.get("state") == '80' or provider_payment.get("state") == '-2':
             payment.status = PaymentStatusEnum.ERROR
 
+        from django.forms.models import model_to_dict
+        # print(model_to_dict(payment))
         payment.save()
 
 

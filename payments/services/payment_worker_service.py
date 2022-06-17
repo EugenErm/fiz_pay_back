@@ -31,7 +31,7 @@ def payment_worker():
 
     def get_provider_payment(payment: Payment):
         logger.debug(f"'{threading.current_thread().name} -- Get provider payment by ID: {payment.id}")
-        return payment_provider.get_payout_by_id(payment)
+        return payment_provider.get_payout_by_id(payment.id)
 
     def get_payment_by_id(id: int):
         return payment_service.get_payment_by_id(id)

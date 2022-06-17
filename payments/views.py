@@ -12,6 +12,7 @@ from .services.balance_service import balance_service
 from .services.payment_cert_service import payment_cert_service
 from .services.payment_import_service import payment_import_service
 from .services.payment_service import payment_service
+from .services.payment_provider_sl_adapter import payment_provider_adapter
 
 
 # Payments Cert
@@ -192,3 +193,18 @@ def clear_payment_list(request):
         payment_service.clear_payment_list()
         return HttpResponse("Ok")
     return HttpResponse("Err")
+
+@csrf_exempt
+def refresh_payment_status_by_ids(request):
+    if request.method == 'POST':
+        payments_ids = json.loads(request.body)
+        for id in payments_ids['ids']:
+            provider_payment = payment_provider_adapter.get_payout_by_id(id)
+            payment_service.refresh_payment_status_from_provider_payment(id, provider_payment)
+
+        return JsonResponse({
+            "status": "ok",
+        })
+
+
+
