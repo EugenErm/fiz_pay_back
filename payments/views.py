@@ -1,13 +1,13 @@
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.permissions import IsAuthenticated,
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Payment
-# from .permissions import IsAdminOrIsSelf
-from .serializers import PaymentCreateSerializer, PaymentListSerializer, PaymentsStartSerializer
+from .permissions import IsAdminOrIsSelf
+from .serializers import PaymentCreateSerializer, PaymentListSerializer
 
 
 class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
@@ -30,13 +30,8 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         return PaymentListSerializer
 
-    @action(methods=['post'], detail=False, permission_classes=[IsAdminOrIsSelf])
+    @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
     def start(self, request):
-        serializer = PaymentsStartSerializer(data=request.data)
-        if serializer.is_valid():
-            user.set_password(serializer.validated_data['password'])
-            user.save()
-            return Response({'status': 'password set'})
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        instance = self.get_object()
+        instance.start()
+        return Response({'status': 'ok'})
