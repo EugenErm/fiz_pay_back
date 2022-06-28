@@ -1,6 +1,6 @@
 from paymentcert.models import PaymentCert
 from payments.models import Payment
-from payments.services.payment_service_sl import PaymentClient
+from payments.payment_service_sl import PaymentClient
 
 
 def _get_payment_client(payment_id: int)-> PaymentClient:

@@ -161,3 +161,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
 }
+
+
+# APP VARS
+
+SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
+SL_SERVICE_OPEN = '219'

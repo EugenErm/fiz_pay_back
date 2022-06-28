@@ -1,12 +1,7 @@
-import logging
-from django.db import models, transaction
+from django.db import models
 from django.contrib.auth.models import User
 
-from .exceptions import IncorrectPaymentStatusException
-from .tasks import start_payment
 from .validators import is_credit_card_validator
-
-_logger = logging.getLogger('app')
 
 
 class PaymentStatusEnum(models.TextChoices):
@@ -41,22 +36,6 @@ class Payment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    @transaction.atomic()
-    def start(self):
-        _logger.debug(f"Start payment ID: {self.id}")
-        _logger.debug(f"Find payment: {self}")
-
-        if self.status != PaymentStatusEnum.NEW:
-            _logger.error(
-                f"Payment status incorrect (Payement ID: {self.id}) status: {self.status}")
-            raise IncorrectPaymentStatusException()
-
-        self.status = PaymentStatusEnum.IN_PROGRESS
-        self.save()
-        start_payment(self.id)
-        _logger.debug(f"Payment started: {self}")
-
 
     def __str__(self):
         return f"Payment(" \
