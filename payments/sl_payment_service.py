@@ -1,44 +1,42 @@
-import datetime
 import logging
-from os import path
 from xml.etree.ElementTree import Element, tostring
 
-import requests
 import requests_pkcs12
 import xmltodict
 
 from paymentcert.models import PaymentCert
+from payments.exceptions import InvalidPaymentCertException, ProviderPaymentNotFoundException
 from payments.models import Payment
 
 from django.conf import settings
 
-logger = logging.getLogger('app')
+from payments.types import ProviderPayment
 
+logger = logging.getLogger('app')
 
 
 class SLPaymentClient:
     DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
     API_URL = settings.SL_API_URL
 
-    def __int__(self, payment: Payment, payment_cert: PaymentCert):
-        self.payment_cert = payment_cert
-        self.payment = payment
+    def __init__(self, cert: PaymentCert):
+        self.cert = cert
         self.service = settings.SL_SERVICE_OPEN
         self.logger = logger
 
-    def create_payment(self):
-        self.logger.debug(f"PaymentClient -- create_payout - Payment: {self.payment}")
+    def create_provider_payment(self, payment: Payment) -> ProviderPayment:
+        self.logger.debug(f"PaymentClient -- create_payout - Payment: {payment}")
 
         payment_request = Element('payment', {
-            "id": str(self.payment.id),
-            "sum": str(self.payment.amount),
+            "id": str(payment.id),
+            "sum": str(payment.amount),
             "check": "0",
             "service": self.service,
-            "account": self.payment.card_data,
-            "date": self.payment.created_at.strftime(self.DATE_FORMAT)
+            "account": payment.card_data,
+            "date": payment.created_at.strftime(self.DATE_FORMAT)
         })
-        payment_request.append(Element('attribute', {'name': "full_name", 'value': _get_name(self.payment)}))
-        payment_request.append(Element('attribute', {'name': "metadata", 'value': self.payment.metadata}))
+        payment_request.append(Element('attribute', {'name': "full_name", 'value': _get_name(payment)}))
+        payment_request.append(Element('attribute', {'name': "metadata", 'value': payment.metadata}))
 
         return _parse_payment_response(self._post(payment_request))
 
@@ -47,26 +45,29 @@ class SLPaymentClient:
         balance_request = Element('balance')
         return _parse_balance_response(self._post(balance_request))
 
-    def get_payment_by_id(self):
-        self.logger.debug(
-            f"PaymentClient -- get_payout_by_id - Payment ID: {self.payment.id}; trans: {self.payment.operation_id}")
-        get_payment_request = Element('status', {"id": str(self.payment.id)})
-
+    def get_payment_by_id(self, payment: Payment) -> ProviderPayment:
+        self.logger.info(
+            f"PaymentClient -- get_payout_by_id - Payment ID: {payment.id}; trans: {payment.operation_id}")
+        get_payment_request = Element('status', {"id": str(payment.id)})
         return _parse_payment_response(self._post(get_payment_request))
 
     def _post(self, payment_request: Element):
-        req_wrapper = Element('request', {'point': str(self.payment_cert.point)})
+        req_wrapper = Element('request', {'point': str(self.cert.point)})
         req_wrapper.append(payment_request)
 
-        self.logger.debug(f"PaymentClient -- _post - Request: {tostring(req_wrapper)}")
+        self.logger.info(f"PaymentClient -- _post - Request active cert: {self.cert}")
+        self.logger.info(f"PaymentClient -- _post - Request body: {tostring(req_wrapper)}")
 
         try:
             result = requests_pkcs12.post(
                 self.API_URL,
                 data=tostring(req_wrapper),
-                pkcs12_filename=self.payment_cert.p12cert.path,
-                pkcs12_password=self.payment_cert.password
+                pkcs12_filename=self.cert.p12cert.path,
+                pkcs12_password=self.cert.password
             )
+
+            self.logger.info(f"PaymentClient -- _post - resp status: {result.status_code}")
+            self.logger.info(f"PaymentClient -- _post - resp body: {result.text}")
 
             if result.status_code != 200:
                 self.logger.error(f"PaymentClient -- _post - Request Error: {result.status_code}; {result.text}")
@@ -75,52 +76,65 @@ class SLPaymentClient:
             return result.text
 
         except Exception as e:
-            self.logger.exception(e)
             self.logger.error(f"PaymentClient -- _post Error - Request : Request: {tostring(req_wrapper)}")
+            self.logger.error(f"PaymentClient -- _post Error {e}")
 
-            raise Exception('Request Error')
+            if str(e) == 'Invalid password or PKCS12 data':
+                print("Hello")
+                raise InvalidPaymentCertException('Invalid password or PKCS12 data') from None
+            else:
+                raise e
 
 
 def _parce_response(response: str):
     try:
         result = xmltodict.parse(response)
+        if result.get('error'):
+            if result.get('error') == 'Certificate error! Wrong serial!':
+                raise InvalidPaymentCertException('Certificate error! Wrong serial!')
+            else:
+                raise Exception(result.get('error'))
+
         return result
     except Exception as e:
         logger.error(f"PaymentClient -- parce_response - input: {response}", e)
+        raise e
 
 
-def _parse_payment_response(response: str):
+def _parse_payment_response(response: str) -> ProviderPayment:
     resp = _parce_response(response)
 
     try:
-        status = {
-            "id": resp['response']['result']['@id'],
-            "state": resp['response']['result']['@state'],
-            "substate": resp['response']['result']['@substate'],
-            "code": resp['response']['result']['@code'],
-            "final": resp['response']['result']['@final'],
-        }
+        result = resp['response']['result']
 
-        if resp['response']['result'].get('@trans'):
-            status['trans'] = resp['response']['result']['@trans']
+        provider_payment = ProviderPayment(
+            id=result['@id'],
+            state=result['@state'],
+            substate=result['@substate'],
+            code=result['@code'],
+            final=result['@final'],
+        )
 
-        if resp['response']['result'].get('@server_time'):
-            status['server_time'] = resp['response']['result']['@server_time']
+        if result.get('@trans'):
+            provider_payment.trans = result['@trans']
 
-        if resp['response']['result'].get('@process_time'):
-            status['process_time'] = resp['response']['result']['@process_time']
+        if result.get('@server_time'):
+            provider_payment.server_time = result['@server_time']
 
-        if resp['response']['result'].get('attribute'):
-            attr_resp = resp['response']['result'].get('attribute')
+        if result.get('@process_time'):
+            provider_payment.process_time = result['@process_time']
+
+        if result.get('attribute'):
+            attr_resp = result.get('attribute')
             if type(attr_resp) == list:
                 for attr in attr_resp:
                     if attr.get('@name') == 'provider-error-text':
-                        status['provider-error-text'] = attr['@value']
+                        provider_payment.provider_error_text = attr['@value']
             else:
-                if resp['response']['result']['attribute'].get('@name') == 'provider-error-text':
-                    status['provider-error-text'] = resp['response']['result']['attribute']['@value']
+                if attr_resp.get('@name') == 'provider-error-text':
+                    provider_payment.provider_error_text = attr_resp['@value']
 
-        return status
+        return provider_payment
 
     except Exception as e:
         logger.error(f"PaymentClient -- parse_payment_response -: {e}")

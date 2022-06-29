@@ -146,6 +146,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+        # 'django.db.backends': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        # }
     },
 }
 
@@ -165,5 +169,8 @@ REST_FRAMEWORK = {
 
 # APP VARS
 
-SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
-SL_SERVICE_OPEN = '219'
+# SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
+# SL_SERVICE_OPEN = '219'
+
+SL_API_URL = 'https://testing.selfwork.ru/external/extended-cert'
+SL_SERVICE_OPEN = '189'

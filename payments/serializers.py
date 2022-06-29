@@ -8,6 +8,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
+        extra_kwargs = {'card_data': {'write_only': True}}
         fields = ["id", "name", "last_name", "middle_name", "card_data", "amount", 'user']
 
 

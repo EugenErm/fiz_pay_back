@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from .models import PaymentCert
 from .serializers import PaymentCertListSerializer, PaymentCertCreateSerializer
+from .services import get_active_cert
 
 
 class PaymentCertViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
@@ -31,7 +32,7 @@ class PaymentCertViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
     @action(methods=['get'], detail=False)
     def active(self, request):
-        paymentcert = self.filter_queryset(self.get_queryset()).last()
+        paymentcert = get_active_cert(request.user)
         serializer = self.get_serializer(paymentcert)
         return Response(serializer.data)
 
