@@ -46,3 +46,4 @@ class Payment(models.Model):
                f" status_message: {self.status_message};" \
                f" provide_error_text: {self.provide_error_text};" \
                f" amount:{self.amount})"
+

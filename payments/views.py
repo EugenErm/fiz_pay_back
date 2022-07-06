@@ -8,11 +8,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .exceptions import InvalidPaymentCertException, IncorrectPaymentStatusException
+from .payment_import_service import import_payments_from_file
+from .exceptions import InvalidPaymentCertException, IncorrectPaymentStatusException, ImportCountLimitException
+from .forms import UploadPaymentRegisterForm
 from .models import Payment
 from .permissions import IsAdminOrIsSelf
-from .serializers import PaymentCreateSerializer, PaymentListSerializer
-from .services import refresh_payment, start_payment, get_balance
+from .serializers import PaymentCreateSerializer, PaymentListSerializer, StartPaymentsSerializer
+from .services import refresh_payment, start_payment, get_balance, start_payments_by_ids
 
 
 class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
@@ -28,6 +30,56 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         return PaymentListSerializer
 
+    @action(methods=['post'], url_path=r'import', detail=False)
+    def import_payment(self, request):
+        if request.method == 'POST':
+            upload_form = UploadPaymentRegisterForm(request.POST, request.FILES)
+            if upload_form.is_valid():
+                try:
+                    errors, payments = import_payments_from_file(upload_form.files['file'], user=request.user)
+
+                    if len(errors) != 0:
+                        return Response({
+                            "status": "ok",
+                            "data": {
+                                "status": 'err',
+                                "errorType": 'validation',
+                                "errorList": errors
+                            }
+                        })
+
+                    serializer = self.get_serializer_class()
+
+                    return Response({
+                        "status": "ok",
+                        "data": {
+                            "status": 'success',
+                            "payments": serializer(payments, many=True).data
+                        }
+                    })
+
+                except ImportCountLimitException as e:
+                    return Response({
+                        "status": "ok",
+                        "data": {
+                            "status": 'err',
+                            "errorType": 'limits',
+                            "message": "Превышено максимальное количество платежей"
+                        }
+                    })
+                except Exception as e:
+                    return Response({
+                        "status": "err",
+                        "message": "Неизвестная ошибка",
+                        "data": e
+                    })
+            else:
+                return Response({
+                        "status": "err",
+                        "message": "Ошибка отправки формы",
+                        "data": upload_form.errors
+                    })
+
     @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
     def start(self, request, pk=None):
         instance = self.get_object()
@@ -39,6 +91,15 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             return Response({'status': 'err', 'message': str(e)})
         except InvalidPaymentCertException as e:
             return Response({'status': 'err', 'message': str(e)})
+
+    @action(methods=['post'], detail=False, url_path=r'start')
+    def start_by_ids(self, request):
+        serializer = StartPaymentsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        start_payments_by_ids(serializer.data)
+
+        return Response({'status': 'err', 'message': "str(e)"})
+
 
     @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
     def refresh(self, request, pk=None):

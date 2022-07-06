@@ -1,8 +1,7 @@
 import threading
 
 from django.apps import AppConfig
-
-
+from django.conf import settings
 
 
 class PaymentsConfig(AppConfig):
@@ -11,8 +10,8 @@ class PaymentsConfig(AppConfig):
 
     def ready(self):
         pass
-        # from payments.services.payment_worker_service import start_thread_pool
-        # start_thread_pool()
+        from payments.payment_worker import start_thread_pool
+        start_thread_pool(settings.PAYMENT_WORKER_COUNT)
 
 
 

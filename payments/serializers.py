@@ -23,5 +23,5 @@ class PaymentListSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# class PaymentsStartSerializer(serializers.Serializer):
-#     ids = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=100))
+class StartPaymentsSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=100))

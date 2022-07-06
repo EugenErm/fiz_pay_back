@@ -5,7 +5,7 @@ from . import views
 
 router = SimpleRouter()
 router.register(r'payments', views.PaymentsViewSet)
-
+print(router.urls)
 urlpatterns = [
     path('', include(router.urls)),
     path('balance/', views.BalanceAPIView.as_view()),

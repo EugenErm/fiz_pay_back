@@ -169,8 +169,10 @@ REST_FRAMEWORK = {
 
 # APP VARS
 
-# SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
-# SL_SERVICE_OPEN = '219'
+PAYMENT_WORKER_COUNT = 10
 
-SL_API_URL = 'https://testing.selfwork.ru/external/extended-cert'
-SL_SERVICE_OPEN = '189'
+SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
+SL_SERVICE_OPEN = '228'
+
+# SL_API_URL = 'https://testing.selfwork.ru/external/extended-cert'
+# SL_SERVICE_OPEN = '189'

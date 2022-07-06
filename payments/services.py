@@ -1,18 +1,13 @@
-from typing import Optional
-
 import logging
 
-from django.db import transaction
 from django.contrib.auth.models import User
+from django.db import transaction
 
-
-from paymentcert.models import PaymentCert
-from paymentcert.services import get_active_cert
-from .exceptions import IncorrectPaymentStatusException, ProviderPaymentNotFoundException
+from .exceptions import IncorrectPaymentStatusException
 from .mappers import payment_state_mapper
-
-from .sl_payment_service import SLPaymentClient
 from .models import Payment, PaymentStatusEnum
+from .rmq.payment_publisher_service import payment_publisher_service
+from .sl_payment_service import start_provider_payment, get_provider_balance, get_provider_payment
 from .types import ProviderPayment
 
 _logger = logging.getLogger('app')
@@ -30,46 +25,33 @@ def start_payment(payment: Payment):
     payment.save()
     _logger.info(f"PaymentServices > start_payment -- payment id: {payment.id} -- Payment start status changed: {payment}")
 
+    payment_publisher_service.start_payment_event(payment)
+
+def start_payments_by_ids(ids: [int]):
+    # payments = Payment.objects.filter(pk__in=ids)
+    payments = Payment.objects.filter(status=PaymentStatusEnum.NEW)
+    for payment in payments:
+        start_payment(payment)
 
 
 def get_balance(user: User) -> int:
     _logger.info(f"Payment services -- get_balance for user_id: {user.id}")
 
-    client = _get_payment_client_by_user_id(user.id)
-    balance = client.get_balance()
+    balance = get_provider_balance(user)
 
     _logger.info(f"Payment services -- get_balance for user_id: {user.id} result {balance} ")
-    return balance['amount']
+    return balance
 
 
-def _start_provider_payment(payment: Payment):
-    _logger.info(
-        f"PaymentServices > start_provider_payment -- payment id: {payment.id} -- Start init payment: {payment}")
-
-    client = _get_payment_client_by_user_id(payment.user_id)
-    provider_payment = client.create_provider_payment(payment)
-    _logger.info(
-        f"PaymentServices > start_provider_payment -- payment id: {payment.id} -- Provider payment started:  {provider_payment}")
-
-    return provider_payment
-
-
-def _get_provider_payment(payment: Payment) -> Optional[ProviderPayment]:
+def refresh_payment(payment: Payment):
     _logger.info(f"PaymentServices > refresh_payment -- payment id: {payment.id} -- Start refresh payment: {payment}")
+    provider_payment = get_provider_payment(payment)
 
-    client = _get_payment_client_by_user_id(payment.user_id)
-    provider_payment = client.get_payment_by_id(payment)
-
-    if provider_payment.state == '-2':
-        _logger.warning( f"PaymentClient > get_payout_by_id -- payment id: {payment.id}; provider payment not found")
-        return None
-
-    _logger.info(
-        f"PaymentServices > refresh_payment -- payment id: {payment.id} -- Provider payment received:  {provider_payment}")
-    return provider_payment
+    _logger.info(f"PaymentServices > refresh_payment -- payment id: {payment.id} -- receive provider payment {provider_payment}")
+    refresh_payment_from_provider_payment(payment, provider_payment)
 
 
-def _refresh_payment_from_provider_payment(payment: Payment, provider_payment: ProviderPayment):
+def refresh_payment_from_provider_payment(payment: Payment, provider_payment: ProviderPayment):
     _logger.info(f"PaymentServices > refresh_payment_from_provider_payment -- payment id: {payment.id} -- provider_payment: {provider_payment}")
 
     payment.final = provider_payment.final
@@ -95,11 +77,5 @@ def _refresh_payment_from_provider_payment(payment: Payment, provider_payment: P
 
     payment.save()
     _logger.info(f"PaymentServices > refresh_payment_from_provider_payment -- payment id: {payment.id} -- Payment saved: {payment}")
-
-
-def _get_payment_client_by_user_id(user_id) -> SLPaymentClient:
-    cert = get_active_cert(user_id=user_id)
-    return SLPaymentClient(cert=cert)
-
 
 
