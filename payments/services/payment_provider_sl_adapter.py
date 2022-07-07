@@ -30,7 +30,7 @@ class _PaymentProviderSlAdapter:
     # API_URL = "https://testing.selfwork.ru/external/extended-cert"
     PRIVATE_KEY_PATH = path.join(path.dirname(__file__), 'point_274.crt.pem')
     CERT_PATH = path.join(path.dirname(__file__), "point_274.key.pem")
-    SERVICE = '219'
+    SERVICE = '228'
     POINT = "274"
 
 
