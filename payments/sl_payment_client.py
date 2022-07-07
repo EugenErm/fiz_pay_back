@@ -51,7 +51,14 @@ class SLPaymentClient:
         get_payment_request = Element('status', {"id": str(payment.id)})
         return _parse_payment_response(self._post(get_payment_request))
 
+    def check_cert(self) -> bool:
+        self.logger.debug(f"PaymentClient -- check_cert")
+        self.get_balance()
+        return True
+
+
     def _post(self, payment_request: Element):
+
         req_wrapper = Element('request', {'point': str(self.cert.point)})
         req_wrapper.append(payment_request)
 

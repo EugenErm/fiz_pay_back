@@ -1,13 +1,11 @@
-from django.contrib.auth.models import User
-
-from rest_framework import status
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .paginations import StandardResultsSetPagination
 from .payment_import_service import import_payments_from_file
 from .exceptions import InvalidPaymentCertException, IncorrectPaymentStatusException, ImportCountLimitException
 from .forms import UploadPaymentRegisterForm
@@ -18,11 +16,19 @@ from .services import refresh_payment, start_payment, get_balance, start_payment
 
 
 class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
-    queryset = Payment.objects.all()
-    permission_classes = [IsAuthenticated]
+    queryset = Payment.objects.all().order_by("-pk")
+    permission_classes = [IsAdminOrIsSelf]
+    pagination_class = StandardResultsSetPagination
 
     def filter_queryset(self, queryset):
         return queryset.filter(user=self.request.user)
+
+
+    def retrieve(self, request, *args, **kwargs):
+        self.permission_classes = [IsAdminOrIsSelf]
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -80,7 +86,7 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                         "data": upload_form.errors
                     })
 
-    @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
+    @action(methods=['post'], detail=True)
     def start(self, request, pk=None):
         instance = self.get_object()
         try:
@@ -101,7 +107,7 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         return Response({'status': 'err', 'message': "str(e)"})
 
 
-    @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
+    @action(methods=['post'], detail=True)
     def refresh(self, request, pk=None):
         instance = self.get_object()
         try:
@@ -118,10 +124,8 @@ class BalanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         try:
             balance = get_balance(request.user)
-            print(balance)
             return Response({'status': 'ok', 'balance': balance})
 
         except InvalidPaymentCertException as e:

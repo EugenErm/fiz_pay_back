@@ -24,4 +24,4 @@ class PaymentListSerializer(serializers.ModelSerializer):
 
 
 class StartPaymentsSerializer(serializers.Serializer):
-    ids = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=100))
+    ids = serializers.ListField(child=serializers.IntegerField(min_value=0))

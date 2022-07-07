@@ -73,7 +73,6 @@ class _PaymentService:
         if provider_payment.get("provider-error-text"):
             payment.provide_error_text = provider_payment['provider-error-text']
 
-        print(provider_payment.get("server_time"))
         if provider_payment.get("server_time"):
             payment.start_payment_time = provider_payment['server_time']
 
