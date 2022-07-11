@@ -9,8 +9,21 @@ services:
 
   rebbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
+    restart: always
     ports:
       - 15672:15672
       - 5672:5672
+
+  postgres:
+    image: postgres
+    restart: always
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_USER: postgres
+      POSTGRES_DB: my_database
+    ports:
+      - 5432:5432
+
 

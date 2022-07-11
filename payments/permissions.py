@@ -1,5 +1,7 @@
 from rest_framework.permissions import BasePermission
 
+from paymentcert.services import get_active_cert
+
 
 class IsAdminOrIsSelf(BasePermission):
     """

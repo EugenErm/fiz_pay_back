@@ -9,7 +9,6 @@ class PaymentsConfig(AppConfig):
     name = 'payments'
 
     def ready(self):
-        pass
         from payments.payment_worker import start_thread_pool
         start_thread_pool(settings.PAYMENT_WORKER_COUNT)
 

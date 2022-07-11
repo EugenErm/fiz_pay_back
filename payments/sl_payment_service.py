@@ -4,6 +4,7 @@ import logging
 
 from django.contrib.auth.models import User
 from paymentcert.services import get_active_cert
+from .exceptions import InvalidPaymentCertException
 
 from .models import Payment
 from .sl_payment_client import SLPaymentClient
@@ -51,4 +52,7 @@ def get_provider_balance(user: User) -> int:
 
 def _get_payment_client_by_user_id(user_id) -> SLPaymentClient:
     cert = get_active_cert(user_id=user_id)
+    if not cert:
+        raise InvalidPaymentCertException('Payment cert not fount')
+
     return SLPaymentClient(cert=cert)

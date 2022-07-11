@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -129,6 +130,6 @@ class BalanceAPIView(APIView):
             return Response({'status': 'ok', 'balance': balance})
 
         except InvalidPaymentCertException as e:
-            return Response({'status': 'err', 'message': str(e)})
+            return Response({'status': 'err', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
