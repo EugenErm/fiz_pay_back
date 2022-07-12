@@ -3,13 +3,15 @@ version: '3.9'
 
 volumes:
   postgresdata:
+  rabbitdata:
 
 
 services:
 
   app:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver --noreload
+    restart: always
     volumes:
       - .:/code
     ports:
@@ -21,14 +23,23 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - RABBIT_HOST=rabbitmq
+      - PAYMENT_WORKER_COUNT=1
       - SECRET_KEY=temp
     depends_on:
       - postgres
       - rabbitmq
 
+
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     restart: always
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq/mnesia/
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - 15672:15672
       - 5672:5672

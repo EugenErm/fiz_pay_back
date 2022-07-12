@@ -14,7 +14,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DJANGO_DEBUG', True))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['84.201.155.33']
 
 # Application definition
 
@@ -149,6 +149,7 @@ LOGGING = {
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
+    'http://84.201.155.33',
 ]
 
 REST_FRAMEWORK = {
@@ -163,7 +164,7 @@ REST_FRAMEWORK = {
 
 # APP VARS
 
-PAYMENT_WORKER_COUNT = 10
+PAYMENT_WORKER_COUNT = int(os.environ.get('PAYMENT_WORKER_COUNT', 1))
 
 SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
 SL_SERVICE_OPEN = '228'
