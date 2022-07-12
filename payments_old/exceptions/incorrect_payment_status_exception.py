@@ -1,2 +1,0 @@
-class IncorrectPaymentStatusException(Exception):
-    pass
