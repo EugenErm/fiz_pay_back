@@ -10,51 +10,37 @@ services:
 
   app:
     build: .
-    command: python manage.py runserver --noreload
+    command: python manage.py runserver 0.0.0.0:8000 --noreload
     restart: always
     volumes:
       - .:/code
     ports:
       - "8000:8000"
-    environment:
-      - POSTGRES_NAME=my_database
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=mysecretpassword
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - RABBIT_HOST=rabbitmq
-      - PAYMENT_WORKER_COUNT=1
-      - SECRET_KEY=temp
+    env_file:
+      - .env.dev
     depends_on:
-      - postgres
+      - db
       - rabbitmq
 
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: bitnami/rabbitmq:3.9-debian-11
     restart: always
     volumes:
-      - rabbitdata:/var/lib/rabbitmq/mnesia/
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - rabbitdata:/bitnami
     ports:
       - 15672:15672
       - 5672:5672
 
   db:
-    image: postgres
-    restart: always
+    image: postgres:14-alpine3.16
     volumes:
       - postgresdata:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_USER: postgres
-      POSTGRES_DB: my_database
+    restart: always
     ports:
       - 5432:5432
+    env_file:
+      - .env.dev.db
 
 
 

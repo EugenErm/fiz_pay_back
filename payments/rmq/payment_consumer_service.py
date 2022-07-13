@@ -2,11 +2,15 @@ import pika
 
 from . import settings
 
+# credentials = pika.PlainCredentials("fzuser", "qvAsfLxoTCmqQprmdusf")
+# connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq", credentials=credentials))
+#
 
 class _PaymentConsumerService:
 
     def create_consumer(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=settings.RMQ_HOST))
+        credentials = pika.PlainCredentials(settings.RMQ_USER, settings.RMQ_PASS)
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=settings.RMQ_HOST, virtual_host='/', credentials=credentials))
 
         channel = connection.channel()
         channel.exchange_declare(exchange=settings.RMQ_INPUT_EXCHANGE, durable=True)

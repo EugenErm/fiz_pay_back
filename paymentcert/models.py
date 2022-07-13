@@ -7,7 +7,7 @@ class PaymentCert(models.Model):
     point = models.CharField(max_length=10, blank=False)
     name = models.CharField(max_length=50, blank=False)
     password = models.CharField(max_length=50, blank=False)
-    p12cert = models.FileField(upload_to='certificates/', blank=False)
+    p12cert = models.BinaryField(upload_to='certificates/', blank=False)
 
     user = models.ForeignKey(User, verbose_name="Пользователь", on_delete=models.CASCADE)
 

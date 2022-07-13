@@ -13,7 +13,9 @@ logger = logging.getLogger('app')
 class _PaymentPublisherService:
 
     def init_channel(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        credentials = pika.PlainCredentials(settings.RMQ_USER, settings.RMQ_PASS)
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=settings.RMQ_HOST, virtual_host='/', credentials=credentials))
         channel = connection.channel()
         channel.exchange_declare(exchange=settings.RMQ_INPUT_EXCHANGE, durable=True, )
         channel.queue_declare(queue=settings.RMQ_INPUT_QUEUE, durable=True,

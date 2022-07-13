@@ -1,4 +1,4 @@
-FROM amd64/python:3.9.13-alpine3.16
+FROM bitnami/python:3.9-debian-11
 
 # set work directory
 WORKDIR /usr/src/app
@@ -7,14 +7,18 @@ WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# install psycopg2 dependencies
-RUN apk update \
-    && apk add postgresql-dev gcc python3-dev musl-dev
 
 # install dependencies
 RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
+# copy entrypoint.sh
+COPY ./entrypoint.sh .
+RUN ["chmod", "+x", "/usr/src/app/entrypoint.sh"]
+/usr/src/app/entrypoint.sh
+
 # copy project
 COPY . .
+# run entrypoint.prod.sh
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]

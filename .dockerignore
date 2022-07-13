@@ -1,0 +1,7 @@
+venv
+.env.prod
+.env.prod.db
+.env.dev
+.idea
+.git
+.dockerignore
