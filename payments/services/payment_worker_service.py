@@ -86,7 +86,7 @@ def payment_worker():
     channel.basic_consume(queue=settings.RMQ_INPUT_QUEUE, on_message_callback=payment_massage_handler)
     channel.start_consuming()
 
-def start_thread_pool(worker_pool=10):
+def start_thread_pool(worker_pool=1):
     threads = []
     for i in range(worker_pool):
         t = threading.Thread(target=payment_worker, daemon=True)
