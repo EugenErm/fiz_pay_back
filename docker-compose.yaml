@@ -24,13 +24,14 @@ services:
 
 
   rabbitmq:
-    image: bitnami/rabbitmq:3.9-debian-11
+    image: rabbitmq:3.9-management-alpine
     restart: always
     volumes:
       - rabbitdata:/bitnami
     ports:
       - 15672:15672
       - 5672:5672
+
 
   db:
     image: postgres:14-alpine3.16
