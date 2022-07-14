@@ -1,8 +1,7 @@
 FROM bitnami/python:3.9-debian-11
 
 
-RUN apt-get update \
-    && apt-get -y install netcat \
+RUN apt-get -y install netcat \
     && apt-get -y install telnet
 
 
@@ -15,7 +14,6 @@ ENV PYTHONUNBUFFERED=1
 
 
 # install dependencies
-RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 

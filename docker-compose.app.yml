@@ -1,0 +1,51 @@
+version: '3.9'
+
+
+volumes:
+  postgresdata:
+  rabbitdata:
+
+
+services:
+
+  app:
+    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_back:1.0.0
+    command: gunicorn fiz_pay_back.wsgi:application --bind 0.0.0.0:8000
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+      - rabbitmq
+
+  front:
+    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_front:1.0.0
+    restart: always
+    depends_on:
+      - app
+
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    restart: always
+    volumes:
+      - rabbitdata:/bitnami
+    ports:
+      - 15672:15672
+      - 5672:5672
+
+
+  db:
+    image: postgres:14-alpine3.16
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - .env.prod.db
+
+
+
