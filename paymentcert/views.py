@@ -19,7 +19,6 @@ class PaymentCertViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         model_obj = serializer.save()
         try:
-            check_cert(model_obj)
             headers = self.get_success_headers(serializer.data)
             return Response({"status": "ok"}, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:

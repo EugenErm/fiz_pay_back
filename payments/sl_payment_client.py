@@ -69,7 +69,7 @@ class SLPaymentClient:
             result = requests_pkcs12.post(
                 self.API_URL,
                 data=tostring(req_wrapper),
-                pkcs12_filename=self.cert.p12cert.path,
+                pkcs12_data=self.cert.p12cert,
                 pkcs12_password=self.cert.password
             )
 

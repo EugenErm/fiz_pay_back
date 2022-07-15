@@ -12,9 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY','temp')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get('DJANGO_DEBUG', False))
+DEBUG = bool(os.environ.get('DJANGO_DEBUG', True))
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", '').split(" ")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", '127.0.0.1').split(" ")
 
 # Application definition
 
@@ -72,9 +72,9 @@ WSGI_APPLICATION = 'fiz_pay_back.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'NAME': os.environ.get('DB_NAME', 'my_database'),
+        'USER': os.environ.get('DB_USER', 'postgres' ),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'mysecretpassword'),
         'HOST': os.environ.get('DB_HOST'),
         'PORT': os.environ.get('DB_PORT'),
     }
@@ -170,5 +170,5 @@ PAYMENT_WORKER_COUNT = int(os.environ.get('PAYMENT_WORKER_COUNT', 1))
 SL_API_URL = 'https://business.selfwork.ru/external/extended-cert'
 SL_SERVICE_OPEN = '228'
 
-# SL_API_URL = 'https://testing.selfwork.ru/external/extended-cert'
+# SL_API_URL = 'https://testing.selfwork.ru:8443/external/extended-cert'
 # SL_SERVICE_OPEN = '189'
