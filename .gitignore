@@ -1,5 +1,5 @@
 venv
 .idea
 .git
-.env.prod
-.env.prod.db
+app/.env.prod
+app/.env.prod.db

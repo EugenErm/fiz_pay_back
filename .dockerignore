@@ -1,6 +1,6 @@
 venv
-.env.prod
-.env.prod.db
+app/.env.prod
+app/.env.prod.db
 .env.dev
 .idea
 .git
