@@ -9,7 +9,7 @@ volumes:
 services:
 
   front:
-    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_front:1.0.0
+    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_front:1.0.1
     restart: always
     ports:
       - "4300:80"
@@ -18,7 +18,7 @@ services:
 
 
   app:
-    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_back:1.0.0
+    image: cr.yandex/crpn0ehat931f6dos3u6/fz_pay_back:1.1.0
     command: gunicorn fiz_pay_back.wsgi:application --bind 0.0.0.0:8000
     restart: always
     ports:

@@ -1,4 +1,5 @@
 venv
+certificates
 app/.env.prod
 app/.env.prod.db
 .env.dev

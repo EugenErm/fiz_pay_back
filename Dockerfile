@@ -1,7 +1,8 @@
 FROM bitnami/python:3.9-debian-11
 
 
-RUN apt-get -y install netcat \
+RUN  apt update \
+    && apt-get -y install netcat \
     && apt-get -y install telnet
 
 

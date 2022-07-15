@@ -1,4 +1,5 @@
 venv
+certificates
 .idea
 .git
 app/.env.prod
