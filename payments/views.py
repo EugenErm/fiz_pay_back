@@ -24,7 +24,6 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     def filter_queryset(self, queryset):
         return queryset.filter(user=self.request.user)
 
-
     def retrieve(self, request, *args, **kwargs):
         self.permission_classes = [IsAdminOrIsSelf]
         instance = self.get_object()
@@ -40,52 +39,59 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     @action(methods=['post'], url_path=r'import', detail=False)
     def import_payment(self, request):
         if request.method == 'POST':
-            upload_form = UploadPaymentRegisterForm(request.POST, request.FILES)
-            if upload_form.is_valid():
-                try:
-                    errors, payments = import_payments_from_file(upload_form.files['file'], user=request.user)
+            try:
+                upload_form = UploadPaymentRegisterForm(request.POST, request.FILES)
+                if upload_form.is_valid():
+                    try:
+                        errors, payments = import_payments_from_file(upload_form.files['file'], user=request.user)
 
-                    if len(errors) != 0:
+                        if len(errors) != 0:
+                            return Response({
+                                "status": "ok",
+                                "data": {
+                                    "status": 'err',
+                                    "errorType": 'validation',
+                                    "errorList": errors
+                                }
+                            })
+
+                        serializer = self.get_serializer_class()
+
+                        return Response({
+                            "status": "ok",
+                            "data": {
+                                "status": 'success',
+                                "payments": serializer(payments, many=True).data
+                            }
+                        })
+
+                    except ImportCountLimitException as e:
                         return Response({
                             "status": "ok",
                             "data": {
                                 "status": 'err',
-                                "errorType": 'validation',
-                                "errorList": errors
+                                "errorType": 'limits',
+                                "message": "Превышено максимальное количество платежей"
                             }
                         })
-
-                    serializer = self.get_serializer_class()
-
+                    except Exception as e:
+                        return Response({
+                            "status": "err",
+                            "message": "Неизвестная ошибка",
+                            "data": e
+                        })
+                else:
                     return Response({
-                        "status": "ok",
-                        "data": {
-                            "status": 'success',
-                            "payments": serializer(payments, many=True).data
-                        }
-                    })
-
-                except ImportCountLimitException as e:
-                    return Response({
-                        "status": "ok",
-                        "data": {
-                            "status": 'err',
-                            "errorType": 'limits',
-                            "message": "Превышено максимальное количество платежей"
-                        }
-                    })
-                except Exception as e:
-                    return Response({
-                        "status": "err",
-                        "message": "Неизвестная ошибка",
-                        "data": e
-                    })
-            else:
-                return Response({
                         "status": "err",
                         "message": "Ошибка отправки формы",
                         "data": upload_form.errors
                     })
+            except Exception as e:
+                return Response({
+                    "status": "err",
+                    "message": "Неизвестная ошибка",
+                    "data": e
+                })
 
     @action(methods=['post'], detail=True)
     def start(self, request, pk=None):
@@ -106,7 +112,6 @@ class PaymentsViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         start_payments_by_ids(serializer.data)
 
         return Response({'status': 'err', 'message': "str(e)"})
-
 
     @action(methods=['post'], detail=True)
     def refresh(self, request, pk=None):
@@ -131,5 +136,3 @@ class BalanceAPIView(APIView):
 
         except InvalidPaymentCertException as e:
             return Response({'status': 'err', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-

@@ -51,7 +51,7 @@ def _read_pandas_payments_from_file(f) -> pandas.DataFrame:
     if ext.lower() in csv_ext:
         return pandas.read_csv(f, dtype="string").loc[:, _col_list]
     elif ext.lower() in xls_ext:
-        return pandas.read_excel(f, dtype="string", sheet_name="payments").loc[:, _col_list]
+        return pandas.read_excel(f, dtype="string").loc[:, _col_list]
 
 
 def _validate_payments(payments: pandas.DataFrame):
