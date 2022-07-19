@@ -28,8 +28,7 @@ def start_payment(payment: Payment):
     payment_publisher_service.start_payment_event(payment)
 
 def start_payments_by_ids(ids: [int]):
-    # payments = Payment.objects.filter(pk__in=ids)
-    payments = Payment.objects.filter(status=PaymentStatusEnum.NEW)
+    payments = Payment.objects.filter(pk__in=ids)
     for payment in payments:
         start_payment(payment)
 
